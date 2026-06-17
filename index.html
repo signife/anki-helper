@@ -342,6 +342,175 @@
       border-color: color-mix(in srgb, var(--warning), transparent 60%);
     }
 
+    .status-inline {
+      margin: 0 0 16px;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+    }
+
+    .connection-button.connected {
+      color: var(--success);
+      border-color: color-mix(in srgb, var(--success), transparent 45%);
+      background: color-mix(in srgb, var(--success), transparent 90%);
+    }
+
+    .connection-button.error {
+      color: var(--danger);
+      border-color: color-mix(in srgb, var(--danger), transparent 45%);
+      background: color-mix(in srgb, var(--danger), transparent 90%);
+    }
+
+    .spin {
+      display: inline-block;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .operation-dialog {
+      width: min(460px, 100%);
+      padding: 30px 26px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      color: var(--text);
+      background: var(--surface-strong);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .operation-dialog h2 {
+      margin: 16px 0 8px;
+      font-size: 1.22rem;
+    }
+
+    .operation-dialog p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+
+    .operation-spinner {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 999px;
+      animation: spin .8s linear infinite;
+    }
+
+    .operation-result-icon {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      font-size: 1.6rem;
+      font-weight: 900;
+    }
+
+    .operation-result-icon.success {
+      color: var(--success);
+      background: color-mix(in srgb, var(--success), transparent 88%);
+      border: 1px solid color-mix(in srgb, var(--success), transparent 50%);
+    }
+
+    .operation-result-icon.error {
+      color: var(--danger);
+      background: color-mix(in srgb, var(--danger), transparent 88%);
+      border: 1px solid color-mix(in srgb, var(--danger), transparent 50%);
+    }
+
+    .operation-details {
+      max-height: 220px;
+      overflow: auto;
+      margin: 16px 0 0;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      background: var(--code-bg);
+      text-align: left;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: .8rem;
+      line-height: 1.55;
+    }
+
+    .help-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .help-actions .btn {
+      min-height: 38px;
+      padding: 0 12px;
+      font-size: .82rem;
+    }
+
+    .file-drop-zone {
+      margin-top: 14px;
+      padding: 22px 18px;
+      border: 1.5px dashed color-mix(in srgb, var(--primary), transparent 38%);
+      border-radius: 16px;
+      color: var(--muted);
+      background: color-mix(in srgb, var(--primary), transparent 94%);
+      text-align: center;
+      cursor: pointer;
+      transition:
+        border-color .18s ease,
+        background .18s ease,
+        transform .18s ease;
+    }
+
+    .file-drop-zone:hover,
+    .file-drop-zone:focus-visible,
+    .file-drop-zone.dragover {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary), transparent 88%);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .file-drop-icon {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 1.7rem;
+    }
+
+    .file-drop-title {
+      display: block;
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .file-drop-help {
+      display: block;
+      margin-top: 5px;
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+
+    .file-info {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--muted);
+      background: var(--surface-soft);
+      font-size: .82rem;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
     .mini-note {
       margin-top: 14px;
       padding: 13px 14px;
@@ -803,8 +972,9 @@
       </p>
 
       <div class="hero-actions">
-        <button id="testConnectionBtn" class="btn btn-secondary" type="button">
-          🔌 <span data-i18n="testConnection">Test connection</span>
+        <button id="testConnectionBtn" class="btn btn-secondary connection-button" type="button">
+          <span id="connectionIcon">●</span>
+          <span data-i18n="testConnection">Test connection</span>
         </button>
         <button id="loadSampleBtn" class="btn btn-secondary" type="button">
           🧪 <span data-i18n="loadSample">Load sample</span>
@@ -955,10 +1125,6 @@
           <div id="setupResult" class="setup-result"></div>
         </div>
 
-        <div id="status" class="status" data-i18n="initialStatus">
-          Start Anki, then click Test connection.
-        </div>
-
         <div class="mini-note" data-i18n-html="corsNote">
           Your AnkiConnect <code>webCorsOriginList</code> must include
           <code>https://signife.github.io</code>.
@@ -1004,7 +1170,25 @@
           Paste the JSON generated by ChatGPT. It will be validated automatically and previewed.
         </p>
 
+        <div id="status" class="status status-inline" data-i18n="initialStatus" role="status" aria-live="polite">
+          Start Anki and VOICEVOX, then check the connections.
+        </div>
+
         <textarea id="jsonInput" spellcheck="false"></textarea>
+
+        <div
+          id="fileDropZone"
+          class="file-drop-zone"
+          role="button"
+          tabindex="0"
+          aria-controls="cardFileInput"
+        >
+          <input id="cardFileInput" type="file" accept=".json,.txt,application/json,text/plain" hidden />
+          <span class="file-drop-icon">📂</span>
+          <span class="file-drop-title" data-i18n="fileDropTitle">Drop a JSON/TXT file here or click to choose</span>
+          <span class="file-drop-help" data-i18n="fileDropHelp">Supports one card, a JSON array, or multiple JSON objects. TXT content must also be JSON.</span>
+        </div>
+        <div id="fileInfo" class="file-info" hidden></div>
 
         <div class="button-row">
           <button id="validateBtn" class="btn btn-secondary" type="button">
@@ -1014,7 +1198,8 @@
             🗑 <span data-i18n="clear">Clear</span>
           </button>
           <button id="addBtn" class="btn btn-primary" type="button">
-            ＋ <span data-i18n="addToAnki">Add to Anki</span>
+            <span id="addButtonIcon">＋</span>
+            <span data-i18n="addToAnki">Add to Anki</span>
           </button>
         </div>
       </section>
@@ -1024,6 +1209,17 @@
       Card data is not stored on this website. It is sent only to AnkiConnect on this computer.
     </footer>
   </main>
+
+  <div id="operationModal" class="modal-backdrop" hidden>
+    <section class="operation-dialog" role="dialog" aria-modal="true" aria-labelledby="operationTitle">
+      <div id="operationSpinner" class="operation-spinner"></div>
+      <div id="operationResultIcon" class="operation-result-icon" hidden></div>
+      <h2 id="operationTitle">Adding card</h2>
+      <p id="operationMessage">Preparing…</p>
+      <pre id="operationDetails" class="operation-details" hidden></pre>
+      <button id="operationCloseBtn" class="btn btn-secondary" type="button" hidden data-i18n="close">Close</button>
+    </section>
+  </div>
 
   <div id="helpModal" class="modal-backdrop" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
@@ -1036,21 +1232,20 @@
         <div class="help-step">
           <div class="step-number">1</div>
           <div>
-            <h3 data-i18n="helpStep1Title">Install the AnkiConnect add-on</h3>
-            <p data-i18n="helpStep1Body">
-              In desktop Anki, open Tools → Add-ons → Get Add-ons, install AnkiConnect, and restart Anki.
-            </p>
+            <h3 data-i18n="helpStep1Title">Install Anki and AnkiConnect</h3>
+            <p data-i18n="helpStep1Body">Install desktop Anki, then install the AnkiConnect add-on and restart Anki.</p>
+            <div class="help-actions">
+              <button id="openAnkiConnectBtn" class="btn btn-secondary" type="button" data-i18n="openAnkiConnect">Open AnkiConnect page</button>
+              <button id="copyAnkiConnectCodeBtn" class="btn btn-secondary" type="button" data-i18n="copyAddonCode">Copy add-on code 2055492159</button>
+            </div>
           </div>
         </div>
 
         <div class="help-step">
           <div class="step-number">2</div>
           <div>
-            <h3 data-i18n="helpStep2Title">Allow the GitHub Pages origin</h3>
-            <p data-i18n="helpStep2Body">
-              In Anki, open Tools → Add-ons → AnkiConnect → Config and add the following origin to webCorsOriginList.
-            </p>
-
+            <h3 data-i18n="helpStep2Title">Allow this website in AnkiConnect</h3>
+            <p data-i18n="helpStep2Body">Open Anki → Tools → Add-ons → AnkiConnect → Config. Add this GitHub Pages origin to webCorsOriginList, save, and restart Anki.</p>
             <div class="code-block">
               <button id="copyCorsBtn" class="copy-code" type="button" data-i18n="copy">Copy</button>
               <pre id="corsCode">{
@@ -1066,30 +1261,58 @@
         <div class="help-step">
           <div class="step-number">3</div>
           <div>
-            <h3 data-i18n="helpStep3Title">Restart Anki and test the connection</h3>
-            <p data-i18n="helpStep3Body">
-              Save the config, restart Anki, and click Test connection on this page.
-            </p>
+            <h3 data-i18n="helpStep3Title">Install VOICEVOX</h3>
+            <p data-i18n="helpStep3Body">Install VOICEVOX, launch it once, and add the voices you want to use.</p>
+            <div class="help-actions">
+              <button id="openVoicevoxBtn" class="btn btn-secondary" type="button" data-i18n="openVoicevox">Open VOICEVOX website</button>
+            </div>
           </div>
         </div>
 
         <div class="help-step">
           <div class="step-number">4</div>
           <div>
-            <h3 data-i18n="helpStep4Title">Create the recommended setup</h3>
-            <p data-i18n="helpStep4Body">
-              Choose the default card mode and card font. The note type is fixed as signife_anki_helper. Then create the setup.
-            </p>
+            <h3 data-i18n="helpStep4Title">Allow this website in VOICEVOX</h3>
+            <p data-i18n="helpStep4Body">With VOICEVOX running, open its setting page. Add https://signife.github.io to Allow Origin, save, completely close VOICEVOX, and start it again.</p>
+            <div class="help-actions">
+              <button id="openVoicevoxSettingBtn" class="btn btn-secondary" type="button" data-i18n="openVoicevoxSetting">Open VOICEVOX policy settings</button>
+              <button id="copyOriginBtn" class="btn btn-secondary" type="button" data-i18n="copyOrigin">Copy https://signife.github.io</button>
+            </div>
           </div>
         </div>
 
         <div class="help-step">
           <div class="step-number">5</div>
           <div>
-            <h3 data-i18n="helpStep5Title">Add cards</h3>
-            <p data-i18n="helpStep5Body">
-              Paste JSON created by ChatGPT and click Add to Anki.
-            </p>
+            <h3 data-i18n="helpStep5Title">Start Anki and VOICEVOX</h3>
+            <p data-i18n="helpStep5Body">Every time you add cards with audio, keep both desktop Anki and VOICEVOX running. Then press Check connection. A green check means both are ready.</p>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-number">6</div>
+          <div>
+            <h3 data-i18n="helpStep6Title">Create the recommended Anki setup once</h3>
+            <p data-i18n="helpStep6Body">Choose the deck, card mode, font, voice, and speed. Press Create recommended Anki setup. It creates the signife_anki_helper note type with 13 fields and its templates.</p>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-number">7</div>
+          <div>
+            <h3 data-i18n="helpStep7Title">Ask GPT for card JSON</h3>
+            <p data-i18n="helpStep7Body">Ask GPT to return only one card as valid JSON. reading and exampleReadings should contain full hiragana pronunciations so VOICEVOX does not misread kanji.</p>
+            <div class="help-actions">
+              <button id="copyPromptBtn" class="btn btn-secondary" type="button" data-i18n="copyPrompt">Copy GPT prompt</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-number">8</div>
+          <div>
+            <h3 data-i18n="helpStep8Title">Paste the JSON and add the card</h3>
+            <p data-i18n="helpStep8Body">Paste JSON or choose/drop a JSON/TXT file. A file may contain one card, a JSON array, or multiple JSON objects. Press Add to Anki; cards are processed one at a time and failures are listed at the end.</p>
           </div>
         </div>
       </div>
@@ -1127,6 +1350,9 @@
       modeTooltipTitle: $("#modeTooltipTitle"),
       modeBackDiagram: $("#modeBackDiagram"),
       jsonInput: $("#jsonInput"),
+      fileDropZone: $("#fileDropZone"),
+      cardFileInput: $("#cardFileInput"),
+      fileInfo: $("#fileInfo"),
       status: $("#status"),
       preview: $("#preview"),
       previewWord: $("#previewWord"),
@@ -1139,10 +1365,25 @@
       previewExamples: $("#previewExamples"),
       previewSynonyms: $("#previewSynonyms"),
       testConnectionBtn: $("#testConnectionBtn"),
+      connectionIcon: $("#connectionIcon"),
       loadSampleBtn: $("#loadSampleBtn"),
       validateBtn: $("#validateBtn"),
       clearBtn: $("#clearBtn"),
-      addBtn: $("#addBtn")
+      addBtn: $("#addBtn"),
+      addButtonIcon: $("#addButtonIcon"),
+      operationModal: $("#operationModal"),
+      operationSpinner: $("#operationSpinner"),
+      operationResultIcon: $("#operationResultIcon"),
+      operationTitle: $("#operationTitle"),
+      operationMessage: $("#operationMessage"),
+      operationDetails: $("#operationDetails"),
+      operationCloseBtn: $("#operationCloseBtn"),
+      openAnkiConnectBtn: $("#openAnkiConnectBtn"),
+      copyAnkiConnectCodeBtn: $("#copyAnkiConnectCodeBtn"),
+      openVoicevoxBtn: $("#openVoicevoxBtn"),
+      openVoicevoxSettingBtn: $("#openVoicevoxSettingBtn"),
+      copyOriginBtn: $("#copyOriginBtn"),
+      copyPromptBtn: $("#copyPromptBtn")
     };
 
     const MODEL_NAME = "signife_anki_helper";
@@ -1186,27 +1427,24 @@
         setupModelExists: "Note type already exists",
         setupReady: "Anki setup is ready.",
         setupFailed: "Automatic setup failed",
-        initialStatus: "Start Anki, then click Test connection.",
+        initialStatus: "Start Anki and VOICEVOX, then click Test connection.",
         corsNote: 'Your AnkiConnect <code>webCorsOriginList</code> must include <code>https://signife.github.io</code>.',
         cardPreview: "Card preview",
         nativeMeaning: "Native meaning",
         cardJson: "Card JSON",
-        jsonDescription: "Paste the JSON generated by ChatGPT. It will be validated automatically and previewed.",
+        jsonDescription: "Paste JSON generated by ChatGPT, or import a JSON/TXT file containing one or more cards.",
+        fileDropTitle: "Drop a JSON/TXT file here or click to choose",
+        fileDropHelp: "Supports one card, a JSON array, or multiple JSON objects. TXT content must also be JSON.",
+        fileLoaded: "File loaded",
+        cardsDetected: "cards detected",
+        unsupportedFile: "Only .json and .txt files are supported.",
+        fileReadFailed: "The file could not be read.",
+        bulkSummary: "Bulk addition finished",
         validateJson: "Validate JSON",
         clear: "Clear",
         addToAnki: "Add to Anki",
         privacyNote: "Card data is not stored on this website. It is sent only to AnkiConnect on this computer.",
         howToUse: "How do I use this?",
-        helpStep1Title: "Install the AnkiConnect add-on",
-        helpStep1Body: "In desktop Anki, open Tools → Add-ons → Get Add-ons, install AnkiConnect, and restart Anki.",
-        helpStep2Title: "Allow the GitHub Pages origin",
-        helpStep2Body: "In Anki, open Tools → Add-ons → AnkiConnect → Config and add the following origin to webCorsOriginList.",
-        helpStep3Title: "Restart Anki and test the connection",
-        helpStep3Body: "Save the config, restart Anki, and click Test connection on this page.",
-        helpStep4Title: "Create the recommended setup",
-        helpStep4Body: "Choose the default card mode and card font. The note type is fixed as signife_anki_helper. Then create the setup.",
-        helpStep5Title: "Add cards",
-        helpStep5Body: "Paste JSON created by ChatGPT and click Add to Anki.",
         copy: "Copy",
         copied: "Copied",
         sampleLoaded: "Sample card loaded.",
@@ -1224,6 +1462,33 @@
         added: "Card added",
         addFailed: "Failed to add card",
         duplicate: "The card may already exist.",
+        close: "Close",
+        openAnkiConnect: "Open AnkiConnect page",
+        copyAddonCode: "Copy add-on code 2055492159",
+        openVoicevox: "Open VOICEVOX website",
+        openVoicevoxSetting: "Open VOICEVOX policy settings",
+        copyOrigin: "Copy https://signife.github.io",
+        copyPrompt: "Copy GPT prompt",
+        helpStep1Title: "Install Anki and AnkiConnect",
+        helpStep1Body: "Install desktop Anki, then install the AnkiConnect add-on and restart Anki.",
+        helpStep2Title: "Allow this website in AnkiConnect",
+        helpStep2Body: "Open Anki → Tools → Add-ons → AnkiConnect → Config. Add this GitHub Pages origin to webCorsOriginList, save, and restart Anki.",
+        helpStep3Title: "Install VOICEVOX",
+        helpStep3Body: "Install VOICEVOX, launch it once, and add the voices you want to use.",
+        helpStep4Title: "Allow this website in VOICEVOX",
+        helpStep4Body: "With VOICEVOX running, open its setting page. Add https://signife.github.io to Allow Origin, save, completely close VOICEVOX, and start it again.",
+        helpStep5Title: "Start Anki and VOICEVOX",
+        helpStep5Body: "Every time you add cards with audio, keep both desktop Anki and VOICEVOX running. Then press Check connection. A green check means both are ready.",
+        helpStep6Title: "Create the recommended Anki setup once",
+        helpStep6Body: "Choose the deck, card mode, font, voice, and speed. Press Create recommended Anki setup. It creates the signife_anki_helper note type with 13 fields and its templates.",
+        helpStep7Title: "Ask GPT for card JSON",
+        helpStep7Body: "Ask GPT to return only one card as valid JSON. reading and exampleReadings should contain full hiragana pronunciations so VOICEVOX does not misread kanji.",
+        helpStep8Title: "Paste the JSON and add the card",
+        helpStep8Body: "Paste JSON or choose/drop a JSON/TXT file. A file may contain one card, a JSON array, or multiple JSON objects. Press Add to Anki; cards are processed one at a time and failures are listed at the end.",
+        operationAddingTitle: "Adding card",
+        operationPreparing: "Preparing card data…",
+        operationSuccessTitle: "Card added",
+        operationErrorTitle: "Card could not be added",
         japaneseOnlyMode: "When the site language is Japanese, only Japanese → Japanese is available."
       },
 
@@ -1265,27 +1530,24 @@
         setupModelExists: "노트 타입이 이미 존재합니다",
         setupReady: "Anki 설정이 준비되었습니다.",
         setupFailed: "자동 설정 실패",
-        initialStatus: "Anki를 실행한 뒤 연결 테스트를 눌러주세요.",
+        initialStatus: "Anki와 VOICEVOX를 실행한 뒤 연결 확인을 눌러주세요.",
         corsNote: 'AnkiConnect 설정의 <code>webCorsOriginList</code>에 <code>https://signife.github.io</code>가 포함되어 있어야 합니다.',
         cardPreview: "카드 미리보기",
         nativeMeaning: "모국어 뜻",
         cardJson: "카드 JSON",
-        jsonDescription: "ChatGPT가 생성한 JSON을 그대로 붙여넣으세요. 자동으로 검사하고 미리보기를 표시합니다.",
+        jsonDescription: "ChatGPT가 생성한 JSON을 붙여넣거나, 하나 이상의 카드가 담긴 JSON/TXT 파일을 불러오세요.",
+        fileDropTitle: "JSON/TXT 파일을 여기에 놓거나 클릭해서 선택",
+        fileDropHelp: "단일 카드, JSON 배열, 여러 JSON 객체를 지원합니다. TXT 내부 내용도 JSON이어야 합니다.",
+        fileLoaded: "파일 불러오기 완료",
+        cardsDetected: "개 카드 감지",
+        unsupportedFile: ".json 또는 .txt 파일만 지원합니다.",
+        fileReadFailed: "파일을 읽지 못했습니다.",
+        bulkSummary: "일괄 추가 완료",
         validateJson: "JSON 검사",
         clear: "비우기",
         addToAnki: "Anki에 추가",
         privacyNote: "카드 데이터는 이 사이트에 저장되지 않고 현재 PC의 AnkiConnect로만 전송됩니다.",
         howToUse: "어떻게 사용하나요?",
-        helpStep1Title: "AnkiConnect 애드온 설치",
-        helpStep1Body: "데스크톱 Anki에서 도구 → 부가 기능 → 부가 기능 가져오기로 AnkiConnect를 설치하고 Anki를 재시작하세요.",
-        helpStep2Title: "GitHub Pages 주소 허용",
-        helpStep2Body: "Anki에서 도구 → 부가 기능 → AnkiConnect → 설정을 열고 아래 주소를 webCorsOriginList에 추가하세요.",
-        helpStep3Title: "Anki 재시작 및 연결 확인",
-        helpStep3Body: "설정을 저장하고 Anki를 재시작한 뒤 이 페이지에서 연결 테스트를 누르세요.",
-        helpStep4Title: "추천 설정 자동 생성",
-        helpStep4Body: "기본 카드 모드와 카드 글꼴을 선택하세요. 노트 타입은 signife_anki_helper으로 고정됩니다.",
-        helpStep5Title: "카드 추가",
-        helpStep5Body: "ChatGPT에서 만든 JSON을 붙여넣고 Anki에 추가를 누르세요.",
         copy: "복사",
         copied: "복사됨",
         sampleLoaded: "예시 카드를 불러왔습니다.",
@@ -1303,6 +1565,33 @@
         added: "추가 완료",
         addFailed: "추가 실패",
         duplicate: "카드가 이미 존재할 가능성이 있습니다.",
+        close: "닫기",
+        openAnkiConnect: "AnkiConnect 페이지 열기",
+        copyAddonCode: "애드온 코드 2055492159 복사",
+        openVoicevox: "VOICEVOX 홈페이지 열기",
+        openVoicevoxSetting: "VOICEVOX 정책 설정 열기",
+        copyOrigin: "https://signife.github.io 복사",
+        copyPrompt: "GPT 프롬프트 복사",
+        helpStep1Title: "Anki와 AnkiConnect 설치",
+        helpStep1Body: "PC용 Anki를 설치한 뒤 AnkiConnect 애드온을 설치하고 Anki를 재시작하세요.",
+        helpStep2Title: "AnkiConnect에서 이 사이트 허용",
+        helpStep2Body: "Anki → 도구 → 부가 기능 → AnkiConnect → 설정에서 webCorsOriginList에 이 GitHub Pages Origin을 추가하고 저장한 뒤 Anki를 재시작하세요.",
+        helpStep3Title: "VOICEVOX 설치",
+        helpStep3Body: "VOICEVOX를 설치하고 한 번 실행한 뒤 사용할 캐릭터 음성을 추가하세요.",
+        helpStep4Title: "VOICEVOX에서 이 사이트 허용",
+        helpStep4Body: "VOICEVOX가 실행 중일 때 설정 페이지를 열고 Allow Origin에 https://signife.github.io를 추가하세요. 저장 후 VOICEVOX를 완전히 종료했다가 다시 실행하세요.",
+        helpStep5Title: "Anki와 VOICEVOX 실행",
+        helpStep5Body: "음성 카드를 추가할 때마다 PC용 Anki와 VOICEVOX를 모두 켜두세요. 연결 확인 버튼이 초록색 체크가 되면 준비 완료입니다.",
+        helpStep6Title: "추천 Anki 설정 최초 1회 생성",
+        helpStep6Body: "덱, 카드 모드, 글꼴, 음성, 속도를 선택하고 추천 Anki 설정 만들기를 누르세요. 13개 필드와 카드 템플릿을 가진 signife_anki_helper 노트 타입이 생성됩니다.",
+        helpStep7Title: "GPT에게 카드 JSON 요청",
+        helpStep7Body: "GPT에게 유효한 카드 JSON 하나만 출력해 달라고 요청하세요. VOICEVOX 오독을 줄이려면 reading과 exampleReadings에 전체 히라가나 독음을 넣어야 합니다.",
+        helpStep8Title: "JSON 붙여넣기 후 카드 추가",
+        helpStep8Body: "JSON을 붙여넣거나 JSON/TXT 파일을 선택 또는 드래그하세요. 파일에는 단일 카드, JSON 배열, 여러 JSON 객체를 넣을 수 있습니다. Anki에 추가를 누르면 한 장씩 순서대로 처리하고 마지막에 실패 목록을 표시합니다.",
+        operationAddingTitle: "카드 추가 중",
+        operationPreparing: "카드 데이터를 준비하는 중입니다…",
+        operationSuccessTitle: "카드 추가 완료",
+        operationErrorTitle: "카드를 추가하지 못했습니다",
         japaneseOnlyMode: "사이트 언어가 일본어이면 일본어 → 일본어만 사용할 수 있습니다."
       },
 
@@ -1344,27 +1633,24 @@
         setupModelExists: "ノートタイプはすでに存在します",
         setupReady: "Anki設定の準備が完了しました。",
         setupFailed: "自動設定に失敗しました",
-        initialStatus: "Ankiを起動してから接続テストを押してください。",
+        initialStatus: "AnkiとVOICEVOXを起動してから接続確認を押してください。",
         corsNote: 'AnkiConnectの<code>webCorsOriginList</code>に<code>https://signife.github.io</code>を含めてください。',
         cardPreview: "カードプレビュー",
         nativeMeaning: "母語の意味",
         cardJson: "カードJSON",
-        jsonDescription: "ChatGPTが生成したJSONをそのまま貼り付けてください。自動で検証し、プレビューを表示します。",
+        jsonDescription: "ChatGPTが生成したJSONを貼り付けるか、1件以上のカードを含むJSON/TXTファイルを読み込んでください。",
+        fileDropTitle: "JSON/TXTファイルをドロップ、またはクリックして選択",
+        fileDropHelp: "1件のカード、JSON配列、複数のJSONオブジェクトに対応します。TXTの内容もJSON形式である必要があります。",
+        fileLoaded: "ファイルを読み込みました",
+        cardsDetected: "件のカードを検出",
+        unsupportedFile: ".json または .txt ファイルのみ対応しています。",
+        fileReadFailed: "ファイルを読み込めませんでした。",
+        bulkSummary: "一括追加が完了しました",
         validateJson: "JSON確認",
         clear: "クリア",
         addToAnki: "Ankiに追加",
         privacyNote: "カードデータはこのサイトに保存されず、現在のPCのAnkiConnectにのみ送信されます。",
         howToUse: "使い方",
-        helpStep1Title: "AnkiConnectアドオンをインストール",
-        helpStep1Body: "デスクトップ版Ankiで、ツール → アドオン → アドオンを取得からAnkiConnectをインストールし、Ankiを再起動します。",
-        helpStep2Title: "GitHub PagesのURLを許可",
-        helpStep2Body: "Ankiでツール → アドオン → AnkiConnect → 設定を開き、以下のURLをwebCorsOriginListに追加してください。",
-        helpStep3Title: "Ankiを再起動して接続確認",
-        helpStep3Body: "設定を保存してAnkiを再起動し、このページの接続テストを押してください。",
-        helpStep4Title: "推奨設定を自動作成",
-        helpStep4Body: "既定のカードモードとカードフォントを選んでください。ノートタイプは signife_anki_helper に固定されます。",
-        helpStep5Title: "カードを追加",
-        helpStep5Body: "ChatGPTで作成したJSONを貼り付けてAnkiに追加を押してください。",
         copy: "コピー",
         copied: "コピー済み",
         sampleLoaded: "サンプルカードを読み込みました。",
@@ -1382,6 +1668,33 @@
         added: "追加完了",
         addFailed: "追加失敗",
         duplicate: "同じカードがすでに存在する可能性があります。",
+        close: "閉じる",
+        openAnkiConnect: "AnkiConnectページを開く",
+        copyAddonCode: "アドオンコード 2055492159 をコピー",
+        openVoicevox: "VOICEVOX公式サイトを開く",
+        openVoicevoxSetting: "VOICEVOXポリシー設定を開く",
+        copyOrigin: "https://signife.github.io をコピー",
+        copyPrompt: "GPT用プロンプトをコピー",
+        helpStep1Title: "AnkiとAnkiConnectをインストール",
+        helpStep1Body: "デスクトップ版Ankiをインストールし、AnkiConnectアドオンを追加してAnkiを再起動します。",
+        helpStep2Title: "AnkiConnectでこのサイトを許可",
+        helpStep2Body: "Anki → ツール → アドオン → AnkiConnect → 設定で、webCorsOriginListにこのGitHub PagesのOriginを追加し、保存後にAnkiを再起動します。",
+        helpStep3Title: "VOICEVOXをインストール",
+        helpStep3Body: "VOICEVOXをインストールして一度起動し、使用するキャラクターボイスを追加します。",
+        helpStep4Title: "VOICEVOXでこのサイトを許可",
+        helpStep4Body: "VOICEVOXの起動中に設定ページを開き、Allow Originへ https://signife.github.io を追加します。保存後、VOICEVOXを完全終了して再起動します。",
+        helpStep5Title: "AnkiとVOICEVOXを起動",
+        helpStep5Body: "音声付きカードを追加するときは、デスクトップ版AnkiとVOICEVOXの両方を起動してください。接続確認が緑のチェックになれば準備完了です。",
+        helpStep6Title: "推奨Anki設定を初回のみ作成",
+        helpStep6Body: "デッキ、カードモード、フォント、音声、速度を選び、推奨Anki設定を作成します。13フィールドとテンプレートを持つ signife_anki_helper が作成されます。",
+        helpStep7Title: "GPTにカードJSONを依頼",
+        helpStep7Body: "有効なカードJSONを1件だけ返すようGPTに依頼します。VOICEVOXの誤読を減らすため、readingとexampleReadingsには全文のひらがな読みを入れます。",
+        helpStep8Title: "JSONを貼り付けてカード追加",
+        helpStep8Body: "JSONを貼り付けるかJSON/TXTファイルを選択・ドロップします。ファイルには1件、JSON配列、複数のJSONオブジェクトを含められます。Ankiに追加すると1件ずつ処理し、最後に失敗一覧を表示します。",
+        operationAddingTitle: "カードを追加中",
+        operationPreparing: "カードデータを準備しています…",
+        operationSuccessTitle: "カードを追加しました",
+        operationErrorTitle: "カードを追加できませんでした",
         japaneseOnlyMode: "サイト言語が日本語の場合は、日本語 → 日本語のみ使用できます。"
       },
 
@@ -1423,27 +1736,24 @@
         setupModelExists: "笔记类型已存在",
         setupReady: "Anki 设置已准备完成。",
         setupFailed: "自动设置失败",
-        initialStatus: "请先启动 Anki，然后点击测试连接。",
+        initialStatus: "请先启动 Anki 和 VOICEVOX，然后点击连接检查。",
         corsNote: 'AnkiConnect 的 <code>webCorsOriginList</code> 中必须包含 <code>https://signife.github.io</code>。',
         cardPreview: "卡片预览",
         nativeMeaning: "母语含义",
         cardJson: "卡片 JSON",
-        jsonDescription: "请直接粘贴 ChatGPT 生成的 JSON。系统会自动验证并显示预览。",
+        jsonDescription: "请粘贴 ChatGPT 生成的 JSON，或导入包含一张或多张卡片的 JSON/TXT 文件。",
+        fileDropTitle: "将 JSON/TXT 文件拖到此处，或点击选择",
+        fileDropHelp: "支持单张卡片、JSON 数组和多个 JSON 对象。TXT 文件内容也必须是 JSON。",
+        fileLoaded: "文件加载完成",
+        cardsDetected: "张卡片已识别",
+        unsupportedFile: "仅支持 .json 和 .txt 文件。",
+        fileReadFailed: "无法读取文件。",
+        bulkSummary: "批量添加完成",
         validateJson: "检查 JSON",
         clear: "清空",
         addToAnki: "添加到 Anki",
         privacyNote: "卡片数据不会保存在本站，只会发送到当前电脑的 AnkiConnect。",
         howToUse: "如何使用？",
-        helpStep1Title: "安装 AnkiConnect 插件",
-        helpStep1Body: "在桌面版 Anki 中打开 工具 → 插件 → 获取插件，安装 AnkiConnect，然后重启 Anki。",
-        helpStep2Title: "允许 GitHub Pages 地址",
-        helpStep2Body: "在 Anki 中打开 工具 → 插件 → AnkiConnect → 配置，把以下地址加入 webCorsOriginList。",
-        helpStep3Title: "重启 Anki 并测试连接",
-        helpStep3Body: "保存配置后重启 Anki，再点击本页的测试连接。",
-        helpStep4Title: "自动创建推荐设置",
-        helpStep4Body: "请选择默认卡片模式和字体。笔记类型固定为 signife_anki_helper。",
-        helpStep5Title: "添加卡片",
-        helpStep5Body: "粘贴 ChatGPT 生成的 JSON，然后点击添加到 Anki。",
         copy: "复制",
         copied: "已复制",
         sampleLoaded: "已加载示例卡片。",
@@ -1461,6 +1771,33 @@
         added: "添加完成",
         addFailed: "添加失败",
         duplicate: "该卡片可能已经存在。",
+        close: "关闭",
+        openAnkiConnect: "打开 AnkiConnect 页面",
+        copyAddonCode: "复制插件代码 2055492159",
+        openVoicevox: "打开 VOICEVOX 官网",
+        openVoicevoxSetting: "打开 VOICEVOX 策略设置",
+        copyOrigin: "复制 https://signife.github.io",
+        copyPrompt: "复制 GPT 提示词",
+        helpStep1Title: "安装 Anki 和 AnkiConnect",
+        helpStep1Body: "安装桌面版 Anki，然后安装 AnkiConnect 插件并重启 Anki。",
+        helpStep2Title: "在 AnkiConnect 中允许本站",
+        helpStep2Body: "打开 Anki → 工具 → 插件 → AnkiConnect → 配置，把本站 GitHub Pages Origin 加入 webCorsOriginList，保存并重启 Anki。",
+        helpStep3Title: "安装 VOICEVOX",
+        helpStep3Body: "安装并启动一次 VOICEVOX，然后添加需要使用的角色声音。",
+        helpStep4Title: "在 VOICEVOX 中允许本站",
+        helpStep4Body: "保持 VOICEVOX 运行并打开设置页面，在 Allow Origin 中加入 https://signife.github.io。保存后完全退出并重新启动 VOICEVOX。",
+        helpStep5Title: "启动 Anki 和 VOICEVOX",
+        helpStep5Body: "添加语音卡片时必须同时运行桌面版 Anki 和 VOICEVOX。连接检查显示绿色对勾即表示准备完成。",
+        helpStep6Title: "首次创建推荐 Anki 设置",
+        helpStep6Body: "选择牌组、卡片模式、字体、声音和速度，点击创建推荐设置。系统会创建包含13个字段和模板的 signife_anki_helper 笔记类型。",
+        helpStep7Title: "让 GPT 生成卡片 JSON",
+        helpStep7Body: "要求 GPT 只返回一条有效卡片 JSON。为减少 VOICEVOX 误读，请在 reading 和 exampleReadings 中填写完整平假名读音。",
+        helpStep8Title: "粘贴 JSON 并添加卡片",
+        helpStep8Body: "粘贴 JSON，或选择/拖入 JSON/TXT 文件。文件可包含单张卡片、JSON 数组或多个 JSON 对象。点击添加后会逐张处理，并在最后显示失败列表。",
+        operationAddingTitle: "正在添加卡片",
+        operationPreparing: "正在准备卡片数据…",
+        operationSuccessTitle: "卡片添加完成",
+        operationErrorTitle: "无法添加卡片",
         japaneseOnlyMode: "网站语言为日语时，只能使用“日语 → 日语”。"
       }
     };
@@ -1549,6 +1886,73 @@
     function setStatus(message, type = "") {
       elements.status.textContent = message;
       elements.status.className = `status ${type}`.trim();
+    }
+
+    function setConnectionState(state) {
+      elements.testConnectionBtn.classList.remove("connected", "error");
+
+      if (state === "connected") {
+        elements.testConnectionBtn.classList.add("connected");
+        elements.connectionIcon.textContent = "✓";
+      } else if (state === "error") {
+        elements.testConnectionBtn.classList.add("error");
+        elements.connectionIcon.textContent = "✕";
+      } else if (state === "loading") {
+        elements.connectionIcon.innerHTML = '<span class="spin">◌</span>';
+      } else {
+        elements.connectionIcon.textContent = "●";
+      }
+    }
+
+    function showOperationLoading(message) {
+      elements.operationModal.hidden = false;
+      document.body.classList.add("modal-open");
+      elements.operationSpinner.hidden = false;
+      elements.operationResultIcon.hidden = true;
+      elements.operationDetails.hidden = true;
+      elements.operationCloseBtn.hidden = true;
+      elements.operationTitle.textContent = t("operationAddingTitle");
+      elements.operationMessage.textContent = message || t("operationPreparing");
+      elements.operationDetails.textContent = "";
+    }
+
+    function updateOperationProgress(message) {
+      if (!elements.operationModal.hidden && !elements.operationSpinner.hidden) {
+        elements.operationMessage.textContent = message;
+      }
+      setStatus(message);
+    }
+
+    function showOperationResult(success, message, details = "") {
+      elements.operationModal.hidden = false;
+      document.body.classList.add("modal-open");
+      elements.operationSpinner.hidden = true;
+      elements.operationResultIcon.hidden = false;
+      elements.operationResultIcon.className = `operation-result-icon ${success ? "success" : "error"}`;
+      elements.operationResultIcon.textContent = success ? "✓" : "✕";
+      elements.operationTitle.textContent = success
+        ? t("operationSuccessTitle")
+        : t("operationErrorTitle");
+      elements.operationMessage.textContent = message;
+      elements.operationDetails.textContent = details;
+      elements.operationDetails.hidden = !details;
+      elements.operationCloseBtn.hidden = false;
+      elements.operationCloseBtn.focus();
+    }
+
+    function closeOperationModal() {
+      if (!elements.operationSpinner.hidden) return;
+      elements.operationModal.hidden = true;
+      document.body.classList.remove("modal-open");
+      elements.addBtn.focus();
+    }
+
+    function setAddButtonLoading(isLoading) {
+      elements.addBtn.disabled = isLoading;
+      elements.addBtn.setAttribute("aria-busy", String(isLoading));
+      elements.addButtonIcon.innerHTML = isLoading
+        ? '<span class="spin">◌</span>'
+        : "＋";
     }
 
     function escapeHtml(value) {
@@ -1650,18 +2054,114 @@
       return card;
     }
 
-    function parseInput() {
-      const raw = elements.jsonInput.value.trim();
-      if (!raw) throw new Error("Please enter JSON first.");
+    function stripJsonFence(raw) {
+      const trimmed = String(raw || "").trim();
+      const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+      return match ? match[1].trim() : trimmed;
+    }
+
+    function splitTopLevelJsonValues(raw) {
+      const values = [];
+      let start = -1;
+      let depth = 0;
+      let inString = false;
+      let escaped = false;
+
+      for (let index = 0; index < raw.length; index += 1) {
+        const character = raw[index];
+
+        if (start === -1) {
+          if (/\s|,/.test(character)) continue;
+          if (character !== "{" && character !== "[") {
+            throw new Error(`Unexpected character at position ${index + 1}: ${character}`);
+          }
+          start = index;
+          depth = 1;
+          continue;
+        }
+
+        if (inString) {
+          if (escaped) {
+            escaped = false;
+          } else if (character === "\\") {
+            escaped = true;
+          } else if (character === '"') {
+            inString = false;
+          }
+          continue;
+        }
+
+        if (character === '"') {
+          inString = true;
+        } else if (character === "{" || character === "[") {
+          depth += 1;
+        } else if (character === "}" || character === "]") {
+          depth -= 1;
+
+          if (depth === 0) {
+            const segment = raw.slice(start, index + 1);
+            values.push(JSON.parse(segment));
+            start = -1;
+          }
+        }
+      }
+
+      if (start !== -1 || inString || depth !== 0) {
+        throw new Error("The JSON appears to be incomplete.");
+      }
+
+      return values;
+    }
+
+    function normalizeCardCollection(value) {
+      if (Array.isArray(value)) return value;
+      if (value && typeof value === "object" && Array.isArray(value.cards)) {
+        return value.cards;
+      }
+      return [value];
+    }
+
+    function parseCardsFromText(rawText) {
+      const raw = stripJsonFence(rawText);
+      if (!raw) throw new Error("Please enter JSON or choose a file first.");
+
+      let parsedValues;
 
       try {
-        return validateCard(JSON.parse(raw));
-      } catch (error) {
-        if (error instanceof SyntaxError) {
-          throw new Error(`JSON syntax error: ${error.message}`);
+        parsedValues = [JSON.parse(raw)];
+      } catch (singleError) {
+        try {
+          parsedValues = splitTopLevelJsonValues(raw);
+        } catch (multipleError) {
+          throw new Error(`JSON syntax error: ${multipleError.message || singleError.message}`);
         }
-        throw error;
       }
+
+      const cards = parsedValues.flatMap(normalizeCardCollection);
+      if (!cards.length) throw new Error("No cards were found in the JSON.");
+
+      return cards.map((card, index) => {
+        try {
+          return validateCard(card);
+        } catch (error) {
+          const label = card && typeof card === "object" && card.word
+            ? ` (${card.word})`
+            : "";
+          throw new Error(`Card ${index + 1}${label}: ${error.message}`);
+        }
+      });
+    }
+
+    function parseInputCards() {
+      return parseCardsFromText(elements.jsonInput.value);
+    }
+
+    function parseInput() {
+      const cards = parseInputCards();
+      if (cards.length !== 1) {
+        throw new Error(`This action expects one card, but ${cards.length} cards were found.`);
+      }
+      return cards[0];
     }
 
     function updatePreview(card) {
@@ -1682,6 +2182,45 @@
 
     function clearPreview() {
       elements.preview.hidden = true;
+    }
+
+    function clearFileInfo() {
+      elements.fileInfo.hidden = true;
+      elements.fileInfo.textContent = "";
+      elements.cardFileInput.value = "";
+    }
+
+    function formatCardsForEditor(cards) {
+      return JSON.stringify(cards.length === 1 ? cards[0] : cards, null, 2);
+    }
+
+    async function loadCardFile(file) {
+      if (!file) return;
+
+      const extension = file.name.toLowerCase().split(".").pop();
+      if (!['json', 'txt'].includes(extension)) {
+        setStatus(t("unsupportedFile"), "error");
+        elements.fileInfo.hidden = false;
+        elements.fileInfo.textContent = `${file.name} · ${t("unsupportedFile")}`;
+        return;
+      }
+
+      try {
+        const raw = await file.text();
+        const cards = parseCardsFromText(raw);
+        elements.jsonInput.value = formatCardsForEditor(cards);
+        updatePreview(cards[0]);
+        elements.fileInfo.hidden = false;
+        elements.fileInfo.textContent = `${file.name} · ${cards.length} ${t("cardsDetected")}`;
+        setStatus(`${t("fileLoaded")}: ${file.name} · ${cards.length} ${t("cardsDetected")}`, "success");
+      } catch (error) {
+        clearPreview();
+        const message = `${t("fileReadFailed")}
+${String(error.message || error)}`;
+        setStatus(message, "error");
+        elements.fileInfo.hidden = false;
+        elements.fileInfo.textContent = message;
+      }
     }
 
     function saveSettings(showMessage = false) {
@@ -1946,7 +2485,7 @@
       return `[sound:${storedFilename}]`;
     }
 
-    async function createAudioFields(card) {
+    async function createAudioFields(card, progressPrefix = "") {
       const fields = {
         WordAudio: "",
         ExamplesAudio: "",
@@ -1956,7 +2495,7 @@
 
       if (elements.generateWordAudio.checked) {
         const wordVoiceText = String(card.voiceText || card.reading || card.word).trim();
-        setStatus(`VOICEVOX 단어 음성 생성 중… ${card.word} (${wordVoiceText})`);
+        updateOperationProgress(`${progressPrefix}VOICEVOX 단어 음성 생성 중… ${card.word} (${wordVoiceText})`);
         fields.WordAudio = await synthesizeAndStore(wordVoiceText, "word");
         fields.WordAudioSource = makeAudioSource(wordVoiceText);
       }
@@ -1974,7 +2513,7 @@
               : example
           ).trim();
 
-          setStatus(`VOICEVOX 예문 음성 생성 중… ${index + 1}/${card.examples.length}`);
+          updateOperationProgress(`${progressPrefix}VOICEVOX 예문 음성 생성 중… ${index + 1}/${card.examples.length}`);
           audioTags.push(await synthesizeAndStore(exampleVoiceText, `example_${index + 1}`));
         }
 
@@ -2391,14 +2930,23 @@ button.word-character {
 
     async function testConnection() {
       elements.testConnectionBtn.disabled = true;
+      setConnectionState("loading");
       setStatus(t("connecting"));
 
       try {
         const version = await invoke("version");
-        setStatus(`${t("connectionSuccess")} · AnkiConnect v${version}`, "success");
+        const voicevoxReady = await loadVoicevoxSpeakers({ quiet: true });
+
+        if (!voicevoxReady) {
+          throw new Error("VOICEVOX 연결 실패: 실행 상태와 CORS Allow Origin 설정을 확인하세요.");
+        }
+
+        setConnectionState("connected");
+        setStatus(`${t("connectionSuccess")} · AnkiConnect v${version} · VOICEVOX ready`, "success");
       } catch (error) {
+        setConnectionState("error");
         setStatus(`${t("connectionFailed")}
-${error.message}
+${String(error.message || error)}
 
 ${t("connectionHelp")}`, "error");
       } finally {
@@ -2472,34 +3020,12 @@ ${t("connectionHelp")}`, "error");
       }
     }
 
-    async function addToAnki() {
-      let card;
-
-      try {
-        card = parseInput();
-        updatePreview(card);
-      } catch (error) {
-        setStatus(error.message, "error");
-        return;
-      }
-
+    async function addOneCardToAnki(card, index, total) {
       const deckName = elements.deckName.value.trim();
       const modelName = MODEL_NAME;
+      const progressPrefix = total > 1 ? `[${index}/${total}] ` : "";
 
-      if (!deckName) {
-        setStatus("Deck name is required.", "error");
-        return;
-      }
-
-      let audioFields;
-
-      try {
-        audioFields = await createAudioFields(card);
-      } catch (error) {
-        setStatus(`VOICEVOX 음성 생성 실패
-${String(error.message || error)}`, "error");
-        return;
-      }
+      const audioFields = await createAudioFields(card, progressPrefix);
 
       const note = {
         deckName,
@@ -2523,24 +3049,87 @@ ${String(error.message || error)}`, "error");
         tags: ["Japanese", "ChatGPT", "AnkiHelper"]
       };
 
-      elements.addBtn.disabled = true;
-      setStatus(`${t("adding")} ${card.word}`);
+      updateOperationProgress(`${progressPrefix}Anki에 저장하는 중… ${card.word}`);
+      const noteId = await invoke("addNote", { note });
+      return noteId;
+    }
+
+    async function addToAnki() {
+      let cards;
 
       try {
-        const noteId = await invoke("addNote", { note });
-        setStatus(`${t("added")}\n${card.word}\nNote ID: ${noteId}`, "success");
-        elements.jsonInput.value = "";
-        clearPreview();
+        cards = parseInputCards();
+        updatePreview(cards[0]);
       } catch (error) {
         const message = String(error.message || error);
+        setStatus(message, "error");
+        showOperationResult(false, t("addFailed"), message);
+        return;
+      }
 
-        if (message.toLowerCase().includes("duplicate")) {
-          setStatus(`${t("addFailed")}: ${t("duplicate")}`, "warning");
-        } else {
-          setStatus(`${t("addFailed")}\n${message}`, "error");
+      const deckName = elements.deckName.value.trim();
+      if (!deckName) {
+        const message = "Deck name is required.";
+        setStatus(message, "error");
+        showOperationResult(false, t("addFailed"), message);
+        return;
+      }
+
+      setAddButtonLoading(true);
+      showOperationLoading(`${t("adding")} · ${cards.length} card(s)`);
+
+      const successes = [];
+      const failures = [];
+
+      try {
+        updateOperationProgress("Anki와 VOICEVOX 연결을 확인하는 중…");
+        await invoke("version");
+
+        if (elements.generateWordAudio.checked || elements.generateExampleAudio.checked) {
+          const voicevoxReady = await loadVoicevoxSpeakers({ quiet: true });
+          if (!voicevoxReady) {
+            throw new Error("VOICEVOX 연결 실패: 실행 상태와 CORS Allow Origin 설정을 확인하세요.");
+          }
         }
+
+        for (let index = 0; index < cards.length; index += 1) {
+          const card = cards[index];
+          const number = index + 1;
+
+          try {
+            updateOperationProgress(`[${number}/${cards.length}] ${card.word} 처리 중…`);
+            const noteId = await addOneCardToAnki(card, number, cards.length);
+            successes.push({ index: number, word: card.word, noteId });
+          } catch (error) {
+            failures.push({
+              index: number,
+              word: card.word || "(unknown)",
+              error: String(error.message || error)
+            });
+          }
+        }
+
+        const summary = `${t("bulkSummary")} · 성공 ${successes.length} / 실패 ${failures.length} / 전체 ${cards.length}`;
+        const details = [
+          ...successes.map(item => `✓ ${item.index}. ${item.word} · Note ID: ${item.noteId}`),
+          ...failures.map(item => `✕ ${item.index}. ${item.word}\n  ${item.error}`)
+        ].join("\n");
+
+        const allSucceeded = failures.length === 0;
+        setStatus(summary, allSucceeded ? "success" : "warning");
+        showOperationResult(allSucceeded, summary, details);
+
+        if (allSucceeded) {
+          elements.jsonInput.value = "";
+          clearPreview();
+          clearFileInfo();
+        }
+      } catch (error) {
+        const message = String(error.message || error);
+        setStatus(`${t("addFailed")}\n${message}`, "error");
+        showOperationResult(false, t("addFailed"), message);
       } finally {
-        elements.addBtn.disabled = false;
+        setAddButtonLoading(false);
       }
     }
 
@@ -2566,12 +3155,76 @@ ${String(error.message || error)}`, "error");
     elements.helpBtn.addEventListener("click", openHelp);
     elements.closeHelpBtn.addEventListener("click", closeHelp);
 
+    elements.operationCloseBtn.addEventListener("click", closeOperationModal);
+
+    elements.operationModal.addEventListener("click", (event) => {
+      if (
+        event.target === elements.operationModal &&
+        elements.operationSpinner.hidden
+      ) {
+        closeOperationModal();
+      }
+    });
+
+    elements.openAnkiConnectBtn.addEventListener("click", () => {
+      window.open("https://ankiweb.net/shared/info/2055492159", "_blank", "noopener");
+    });
+
+    elements.copyAnkiConnectCodeBtn.addEventListener("click", async () => {
+      await navigator.clipboard.writeText("2055492159");
+      elements.copyAnkiConnectCodeBtn.textContent = t("copied");
+      setTimeout(() => {
+        elements.copyAnkiConnectCodeBtn.textContent = t("copyAddonCode");
+      }, 1400);
+    });
+
+    elements.openVoicevoxBtn.addEventListener("click", () => {
+      window.open("https://voicevox.hiroshiba.jp/", "_blank", "noopener");
+    });
+
+    elements.openVoicevoxSettingBtn.addEventListener("click", () => {
+      window.open("http://127.0.0.1:50021/setting", "_blank", "noopener");
+    });
+
+    elements.copyOriginBtn.addEventListener("click", async () => {
+      await navigator.clipboard.writeText("https://signife.github.io");
+      elements.copyOriginBtn.textContent = t("copied");
+      setTimeout(() => {
+        elements.copyOriginBtn.textContent = t("copyOrigin");
+      }, 1400);
+    });
+
+    elements.copyPromptBtn.addEventListener("click", async () => {
+      const prompt = `다음 일본어 단어를 signife_anki_helper용 카드 JSON 하나로 만들어줘.
+JSON 이외의 설명과 코드 블록은 출력하지 마.
+필드:
+cardMode, word, reading, definition, nativeMeaning, expressions, examples, exampleReadings, synonyms, kanji.
+reading은 표제어 전체의 정확한 히라가나 독음으로 작성해.
+exampleReadings는 examples와 같은 순서로 각 예문의 전체 히라가나 독음을 작성해.
+kanji는 표제어에 포함된 각 한자의 읽기와 의미를 객체로 작성해.
+cardMode는 jp-native로 작성해.`;
+      await navigator.clipboard.writeText(prompt);
+      elements.copyPromptBtn.textContent = t("copied");
+      setTimeout(() => {
+        elements.copyPromptBtn.textContent = t("copyPrompt");
+      }, 1400);
+    });
+
     elements.helpModal.addEventListener("click", (event) => {
       if (event.target === elements.helpModal) closeHelp();
     });
 
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && !elements.helpModal.hidden) closeHelp();
+      if (event.key !== "Escape") return;
+
+      if (!elements.helpModal.hidden) {
+        closeHelp();
+      } else if (
+        !elements.operationModal.hidden &&
+        elements.operationSpinner.hidden
+      ) {
+        closeOperationModal();
+      }
     });
 
     elements.copyCorsBtn.addEventListener("click", async () => {
@@ -2605,10 +3258,12 @@ ${String(error.message || error)}`, "error");
       const raw = elements.jsonInput.value.trim();
       if (raw) {
         try {
-          const parsed = JSON.parse(raw);
-          parsed.cardMode = elements.cardMode.value;
-          elements.jsonInput.value = JSON.stringify(parsed, null, 2);
-          updatePreview(validateCard(parsed));
+          const cards = parseCardsFromText(raw);
+          cards.forEach(card => {
+            card.cardMode = elements.cardMode.value;
+          });
+          elements.jsonInput.value = formatCardsForEditor(cards);
+          updatePreview(cards[0]);
         } catch (_) {}
       }
     });
@@ -2625,9 +3280,9 @@ ${String(error.message || error)}`, "error");
 
     elements.validateBtn.addEventListener("click", () => {
       try {
-        const card = parseInput();
-        updatePreview(card);
-        setStatus(t("jsonValid"), "success");
+        const cards = parseInputCards();
+        updatePreview(cards[0]);
+        setStatus(`${t("jsonValid")} · ${cards.length} ${t("cardsDetected")}`, "success");
       } catch (error) {
         clearPreview();
         setStatus(error.message, "error");
@@ -2637,7 +3292,44 @@ ${String(error.message || error)}`, "error");
     elements.clearBtn.addEventListener("click", () => {
       elements.jsonInput.value = "";
       clearPreview();
+      clearFileInfo();
       setStatus(t("cleared"));
+    });
+
+    elements.fileDropZone.addEventListener("click", () => {
+      elements.cardFileInput.click();
+    });
+
+    elements.fileDropZone.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        elements.cardFileInput.click();
+      }
+    });
+
+    elements.cardFileInput.addEventListener("change", async (event) => {
+      await loadCardFile(event.target.files?.[0]);
+    });
+
+    for (const eventName of ["dragenter", "dragover"]) {
+      elements.fileDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        elements.fileDropZone.classList.add("dragover");
+      });
+    }
+
+    for (const eventName of ["dragleave", "drop"]) {
+      elements.fileDropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        elements.fileDropZone.classList.remove("dragover");
+      });
+    }
+
+    elements.fileDropZone.addEventListener("drop", async (event) => {
+      const file = event.dataTransfer?.files?.[0];
+      await loadCardFile(file);
     });
 
     elements.addBtn.addEventListener("click", addToAnki);
@@ -2651,7 +3343,8 @@ ${String(error.message || error)}`, "error");
       }
 
       try {
-        updatePreview(validateCard(JSON.parse(raw)));
+        const cards = parseCardsFromText(raw);
+        updatePreview(cards[0]);
       } catch {
         clearPreview();
       }
