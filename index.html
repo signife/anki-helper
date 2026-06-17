@@ -352,6 +352,31 @@
       line-height: 1.65;
     }
 
+
+    .system-value {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-soft);
+    }
+
+    .system-value code {
+      color: var(--primary);
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .system-value span {
+      color: var(--muted);
+      font-size: .76rem;
+      text-align: right;
+    }
+
     .setup-box {
       margin-top: 18px;
       padding: 18px;
@@ -753,8 +778,11 @@
         </div>
 
         <div class="form-group">
-          <label for="modelName" data-i18n="modelName">Note type name</label>
-          <input id="modelName" type="text" value="Japanese Dictionary" />
+          <label data-i18n="modelName">Note type name</label>
+          <div class="system-value">
+            <code>signife_anki_helper</code>
+            <span data-i18n="managedAutomatically">Managed automatically</span>
+          </div>
         </div>
 
         <div class="button-row">
@@ -765,8 +793,8 @@
 
         <div class="setup-box">
           <h4 data-i18n="automaticSetupTitle">Automatic Anki setup</h4>
-          <p data-i18n="automaticSetupDescription">
-            Create the deck, note type, nine fields, one conditional card template, and CSS automatically.
+          <p data-i18n-html="automaticSetupDescription">
+            Create the deck and the fixed <code>signife_anki_helper</code> note type with nine fields, one conditional card template, and CSS.
           </p>
 
           <div class="form-group">
@@ -966,7 +994,7 @@
           <div>
             <h3 data-i18n="helpStep4Title">Create the recommended setup</h3>
             <p data-i18n="helpStep4Body">
-              Choose the default card mode and card font, then click Create recommended Anki setup.
+              Choose the default card mode and card font. The note type is fixed as signife_anki_helper. Then create the setup.
             </p>
           </div>
         </div>
@@ -1000,7 +1028,6 @@
       corsCode: $("#corsCode"),
       ankiUrl: $("#ankiUrl"),
       deckName: $("#deckName"),
-      modelName: $("#modelName"),
       saveSettingsBtn: $("#saveSettingsBtn"),
       cardMode: $("#cardMode"),
       cardFont: $("#cardFont"),
@@ -1027,6 +1054,8 @@
       addBtn: $("#addBtn")
     };
 
+    const MODEL_NAME = "signife_anki_helper";
+
     const translations = {
       en: {
         brandSubtitle: "Add ChatGPT card data directly through AnkiConnect",
@@ -1042,10 +1071,11 @@
         ankiUrl: "AnkiConnect URL",
         deckName: "Deck name",
         modelName: "Note type name",
+        managedAutomatically: "Managed automatically",
         saveSettings: "Save settings",
         settingsSaved: "Settings saved.",
         automaticSetupTitle: "Automatic Anki setup",
-        automaticSetupDescription: "Create the deck, note type, nine fields, one conditional card template, and CSS automatically.",
+        automaticSetupDescription: "Create the deck and the fixed <code>signife_anki_helper</code> note type with nine fields, one conditional card template, and CSS.",
         cardMode: "Default card mode",
         details: "Details",
         cardModeHelp: "Each card uses CardMode: jp-jp shows the Japanese definition; jp-native shows the native-language meaning.",
@@ -1083,7 +1113,7 @@
         helpStep3Title: "Restart Anki and test the connection",
         helpStep3Body: "Save the config, restart Anki, and click Test connection on this page.",
         helpStep4Title: "Create the recommended setup",
-        helpStep4Body: "Choose the default card mode and card font, then click Create recommended Anki setup.",
+        helpStep4Body: "Choose the default card mode and card font. The note type is fixed as signife_anki_helper. Then create the setup.",
         helpStep5Title: "Add cards",
         helpStep5Body: "Paste JSON created by ChatGPT and click Add to Anki.",
         copy: "Copy",
@@ -1120,10 +1150,11 @@
         ankiUrl: "AnkiConnect 주소",
         deckName: "덱 이름",
         modelName: "노트 타입 이름",
+        managedAutomatically: "자동 관리",
         saveSettings: "설정 저장",
         settingsSaved: "설정을 저장했습니다.",
         automaticSetupTitle: "Anki 자동 설정",
-        automaticSetupDescription: "덱, 노트 타입, 필드 9개, 조건부 카드 템플릿과 CSS를 자동으로 생성합니다.",
+        automaticSetupDescription: "덱과 고정 노트 타입 <code>signife_anki_helper</code>, 필드 9개, 조건부 카드 템플릿과 CSS를 자동으로 생성합니다.",
         cardMode: "기본 카드 모드",
         details: "상세",
         cardModeHelp: "각 카드의 CardMode가 jp-jp이면 일본어 정의를, jp-native이면 모국어 뜻을 표시합니다.",
@@ -1161,7 +1192,7 @@
         helpStep3Title: "Anki 재시작 및 연결 확인",
         helpStep3Body: "설정을 저장하고 Anki를 재시작한 뒤 이 페이지에서 연결 테스트를 누르세요.",
         helpStep4Title: "추천 설정 자동 생성",
-        helpStep4Body: "기본 카드 모드와 카드 글꼴을 선택한 뒤 추천 Anki 설정 만들기를 누르세요.",
+        helpStep4Body: "기본 카드 모드와 카드 글꼴을 선택하세요. 노트 타입은 signife_anki_helper으로 고정됩니다.",
         helpStep5Title: "카드 추가",
         helpStep5Body: "ChatGPT에서 만든 JSON을 붙여넣고 Anki에 추가를 누르세요.",
         copy: "복사",
@@ -1198,10 +1229,11 @@
         ankiUrl: "AnkiConnect URL",
         deckName: "デッキ名",
         modelName: "ノートタイプ名",
+        managedAutomatically: "自動管理",
         saveSettings: "設定を保存",
         settingsSaved: "設定を保存しました。",
         automaticSetupTitle: "Anki自動セットアップ",
-        automaticSetupDescription: "デッキ、ノートタイプ、9つのフィールド、条件分岐カードテンプレート、CSSを自動作成します。",
+        automaticSetupDescription: "デッキと固定ノートタイプ <code>signife_anki_helper</code>、9つのフィールド、条件分岐カードテンプレート、CSSを自動作成します。",
         cardMode: "既定のカードモード",
         details: "詳細",
         cardModeHelp: "各カードのCardModeがjp-jpなら日本語の定義、jp-nativeなら母語の意味を表示します。",
@@ -1239,7 +1271,7 @@
         helpStep3Title: "Ankiを再起動して接続確認",
         helpStep3Body: "設定を保存してAnkiを再起動し、このページの接続テストを押してください。",
         helpStep4Title: "推奨設定を自動作成",
-        helpStep4Body: "既定のカードモードとカードフォントを選び、推奨Anki設定を作成を押してください。",
+        helpStep4Body: "既定のカードモードとカードフォントを選んでください。ノートタイプは signife_anki_helper に固定されます。",
         helpStep5Title: "カードを追加",
         helpStep5Body: "ChatGPTで作成したJSONを貼り付けてAnkiに追加を押してください。",
         copy: "コピー",
@@ -1276,10 +1308,11 @@
         ankiUrl: "AnkiConnect 地址",
         deckName: "牌组名称",
         modelName: "笔记类型名称",
+        managedAutomatically: "自动管理",
         saveSettings: "保存设置",
         settingsSaved: "设置已保存。",
         automaticSetupTitle: "Anki 自动设置",
-        automaticSetupDescription: "自动创建牌组、笔记类型、9个字段、条件卡片模板和 CSS。",
+        automaticSetupDescription: "自动创建牌组、固定笔记类型 <code>signife_anki_helper</code>、9个字段、条件卡片模板和 CSS。",
         cardMode: "默认卡片模式",
         details: "详情",
         cardModeHelp: "每张卡片通过 CardMode 控制显示：jp-jp 显示日语释义，jp-native 显示母语含义。",
@@ -1317,7 +1350,7 @@
         helpStep3Title: "重启 Anki 并测试连接",
         helpStep3Body: "保存配置后重启 Anki，再点击本页的测试连接。",
         helpStep4Title: "自动创建推荐设置",
-        helpStep4Body: "选择默认卡片模式和字体，然后点击创建推荐的 Anki 设置。",
+        helpStep4Body: "请选择默认卡片模式和字体。笔记类型固定为 signife_anki_helper。",
         helpStep5Title: "添加卡片",
         helpStep5Body: "粘贴 ChatGPT 生成的 JSON，然后点击添加到 Anki。",
         copy: "复制",
@@ -1553,7 +1586,6 @@
       const settings = {
         ankiUrl: elements.ankiUrl.value.trim(),
         deckName: elements.deckName.value.trim(),
-        modelName: elements.modelName.value.trim(),
         cardMode: elements.cardMode.value,
         cardFont: elements.cardFont.value
       };
@@ -1575,7 +1607,6 @@
         const settings = JSON.parse(saved);
         if (settings.ankiUrl) elements.ankiUrl.value = settings.ankiUrl;
         if (settings.deckName) elements.deckName.value = settings.deckName;
-        if (settings.modelName) elements.modelName.value = settings.modelName;
         if (settings.cardMode) elements.cardMode.value = settings.cardMode;
         if (settings.cardFont) elements.cardFont.value = settings.cardFont;
       } catch {
@@ -1890,24 +1921,12 @@
 
       try {
         const version = await invoke("version");
-        const decks = await invoke("deckNames");
-        const models = await invoke("modelNames");
-
-        const deck = elements.deckName.value.trim();
-        const model = elements.modelName.value.trim();
-
-        const deckExists = decks.includes(deck);
-        const modelExists = models.includes(model);
-
-        const lines = [
-          `${t("connectionSuccess")} · AnkiConnect v${version}`,
-          deckExists ? `${t("deckFound")}: ${deck}` : `${t("deckMissing")}: ${deck}`,
-          modelExists ? `${t("modelFound")}: ${model}` : `${t("modelMissing")}: ${model}`
-        ];
-
-        setStatus(lines.join("\n"), deckExists && modelExists ? "success" : "warning");
+        setStatus(`${t("connectionSuccess")} · AnkiConnect v${version}`, "success");
       } catch (error) {
-        setStatus(`${t("connectionFailed")}\n${error.message}\n\n${t("connectionHelp")}`, "error");
+        setStatus(`${t("connectionFailed")}
+${error.message}
+
+${t("connectionHelp")}`, "error");
       } finally {
         elements.testConnectionBtn.disabled = false;
       }
@@ -1915,7 +1934,7 @@
 
     async function createRecommendedSetup() {
       const deckName = elements.deckName.value.trim() || "Japanese";
-      const modelName = elements.modelName.value.trim() || "Japanese Dictionary";
+      const modelName = MODEL_NAME;
       const fontStack = CARD_FONT_STACKS[elements.cardFont.value] || CARD_FONT_STACKS["ms-mincho"];
 
       elements.createSetupBtn.disabled = true;
@@ -1986,10 +2005,10 @@
       }
 
       const deckName = elements.deckName.value.trim();
-      const modelName = elements.modelName.value.trim();
+      const modelName = MODEL_NAME;
 
-      if (!deckName || !modelName) {
-        setStatus("Deck name and note type name are required.", "error");
+      if (!deckName) {
+        setStatus("Deck name is required.", "error");
         return;
       }
 
