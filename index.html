@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
+  <title>Anki Vocabulary Helper</title>
+
+  <style>
+    :root {
+      --bg: #0b1020;
+      --surface: rgba(19, 27, 48, 0.9);
+      --surface-strong: #151d32;
+      --surface-soft: #1a2540;
+      --text: #edf2ff;
+      --muted: #9facbf;
+      --border: rgba(255, 255, 255, 0.1);
+      --primary: #7c9cff;
+      --success: #5dd39e;
+      --danger: #ff7b8b;
+      --warning: #f4c95d;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+      --code-bg: #080d18;
+      --overlay: rgba(2, 6, 16, 0.75);
+    }
+
+    html[data-theme="light"] {
+      --bg: #eef3fb;
+      --surface: rgba(255, 255, 255, 0.9);
+      --surface-strong: #ffffff;
+      --surface-soft: #f4f7fc;
+      --text: #192236;
+      --muted: #647089;
+      --border: rgba(21, 33, 58, 0.12);
+      --primary: #315fe8;
+      --success: #188a5a;
+      --danger: #ce334d;
+      --warning: #a96f00;
+      --shadow: 0 24px 70px rgba(41, 65, 110, 0.16);
+      --code-bg: #edf2f9;
+      --overlay: rgba(27, 39, 64, 0.45);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(124, 156, 255, 0.18), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(93, 211, 158, 0.1), transparent 30rem),
+        var(--bg);
+      font-family:
+        Inter, Pretendard, "Noto Sans KR", "Noto Sans JP",
+        "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    body.modal-open { overflow: hidden; }
+
+    button, input, textarea, select { font: inherit; }
+    button { border: 0; }
+
+    .page-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      color: white;
+      font-weight: 800;
+      background: linear-gradient(135deg, #6f8fff, #8e68ff);
+      box-shadow: 0 12px 32px rgba(106, 133, 255, 0.34);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .toolbar-control {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0 14px;
+      color: var(--text);
+      background: var(--surface);
+      backdrop-filter: blur(18px);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: var(--shadow);
+      transition: transform 0.16s ease, background 0.2s ease;
+    }
+
+    .toolbar-control:hover {
+      transform: translateY(-1px);
+      background: var(--surface-soft);
+    }
+
+    select.toolbar-control {
+      appearance: none;
+      padding-right: 34px;
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position:
+        calc(100% - 16px) 18px,
+        calc(100% - 11px) 18px;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+
+    .hero, .card {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: blur(22px);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      border-radius: 28px;
+      padding: 34px;
+      margin-bottom: 22px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      color: var(--primary);
+      background: rgba(124, 156, 255, 0.12);
+      border: 1px solid rgba(124, 156, 255, 0.24);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .hero h2 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1.08;
+      letter-spacing: -0.055em;
+    }
+
+    .hero p {
+      margin: 18px 0 0;
+      max-width: 740px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .hero-actions, .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-actions { margin-top: 24px; }
+    .button-row { margin-top: 16px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 0.92fr 1.48fr;
+      gap: 22px;
+    }
+
+    .card {
+      border-radius: 24px;
+      padding: 24px;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .card-description {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group:last-child { margin-bottom: 0; }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      outline: none;
+      color: var(--text);
+      background: var(--surface-strong);
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    input {
+      height: 46px;
+      padding: 0 14px;
+    }
+
+    textarea {
+      min-height: 455px;
+      resize: vertical;
+      padding: 16px;
+      line-height: 1.65;
+      tab-size: 2;
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.88rem;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(124, 156, 255, 0.13);
+    }
+
+    .btn {
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 13px;
+      cursor: pointer;
+      font-weight: 750;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+      transform: none;
+    }
+
+    .btn-primary {
+      color: white;
+      background: linear-gradient(135deg, #5f7ef5, #7a5cef);
+      box-shadow: 0 10px 26px rgba(94, 116, 240, 0.28);
+    }
+
+    .btn-secondary {
+      color: var(--text);
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+    }
+
+    .status {
+      margin-top: 16px;
+      min-height: 50px;
+      border-radius: 14px;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      background: var(--surface-soft);
+      color: var(--muted);
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .status.success {
+      color: var(--success);
+      border-color: color-mix(in srgb, var(--success), transparent 60%);
+    }
+
+    .status.error {
+      color: var(--danger);
+      border-color: color-mix(in srgb, var(--danger), transparent 60%);
+    }
+
+    .status.warning {
+      color: var(--warning);
+      border-color: color-mix(in srgb, var(--warning), transparent 60%);
+    }
+
+    .mini-note {
+      margin-top: 14px;
+      padding: 13px 14px;
+      border-radius: 14px;
+      background: rgba(124, 156, 255, 0.08);
+      color: var(--muted);
+      font-size: 0.83rem;
+      line-height: 1.65;
+    }
+
+    .preview {
+      margin-top: 20px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--surface-strong);
+    }
+
+    .preview-header {
+      padding: 12px 15px;
+      color: var(--muted);
+      background: var(--surface-soft);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      font-weight: 750;
+    }
+
+    .preview-body { padding: 18px; }
+
+    .preview-word {
+      font-family: "Noto Serif JP", "Yu Mincho", serif;
+      font-size: 2.4rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 10px;
+    }
+
+    .preview-reading {
+      color: var(--primary);
+      margin-bottom: 18px;
+      font-weight: 700;
+    }
+
+    .preview-section { margin-top: 16px; }
+
+    .preview-section strong {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .preview-section ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .preview-section li { margin: 6px 0; }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-top: 24px;
+    }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 7px;
+      background: var(--code-bg);
+      font-family: "JetBrains Mono", Consolas, monospace;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: var(--overlay);
+      backdrop-filter: blur(8px);
+    }
+
+    .modal-backdrop[hidden] { display: none; }
+
+    .modal {
+      width: min(760px, 100%);
+      max-height: min(86vh, 900px);
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: var(--surface-strong);
+      box-shadow: var(--shadow);
+    }
+
+    .modal-header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-strong);
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .modal-close {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      color: var(--text);
+      background: var(--surface-soft);
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 22px;
+      line-height: 1.72;
+    }
+
+    .help-step {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .step-number {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 800;
+      background: linear-gradient(135deg, #5f7ef5, #7a5cef);
+    }
+
+    .help-step h3 {
+      margin: 2px 0 7px;
+      font-size: 1rem;
+    }
+
+    .help-step p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .code-block {
+      position: relative;
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--code-bg);
+    }
+
+    .code-block pre {
+      margin: 0;
+      padding: 16px;
+      overflow: auto;
+      color: var(--text);
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
+    .copy-code {
+      position: absolute;
+      top: 9px;
+      right: 9px;
+      min-height: 34px;
+      padding: 0 11px;
+      border-radius: 9px;
+      color: var(--text);
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+      .hero { padding: 26px 22px; }
+      .topbar { align-items: flex-start; }
+      .brand p { display: none; }
+    }
+
+    @media (max-width: 680px) {
+      .topbar {
+        flex-direction: column;
+      }
+
+      .toolbar {
+        width: 100%;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page-shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: 14px;
+      }
+
+      .hero h2 { font-size: 2.1rem; }
+      .card { padding: 18px; }
+      textarea { min-height: 380px; }
+
+      .button-row .btn {
+        flex: 1 1 100%;
+      }
+
+      .toolbar-control .hide-mobile {
+        display: none;
+      }
+
+      .toolbar-control {
+        min-width: 44px;
+        padding: 0 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div>
+          <h1>Anki Vocabulary Helper</h1>
+          <p data-i18n="brandSubtitle">ChatGPT 카드 데이터를 AnkiConnect로 바로 추가</p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <select id="languageSelect" class="toolbar-control" aria-label="Language">
+          <option value="ko">한국어</option>
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+
+        <button id="helpBtn" class="toolbar-control" type="button">
+          <span>❔</span>
+          <span class="hide-mobile" data-i18n="help">도움말</span>
+        </button>
+
+        <button id="themeToggle" class="toolbar-control" type="button" aria-label="Theme">
+          <span id="themeIcon">☀️</span>
+          <span id="themeLabel" class="hide-mobile">라이트 모드</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-badge">⚡ GitHub Pages + AnkiConnect</div>
+      <h2 data-i18n-html="heroTitle">일본어 단어를<br />개인 사전 카드로 저장하세요.</h2>
+      <p data-i18n="heroDescription">
+        ChatGPT에서 생성한 JSON을 붙여넣고 버튼 한 번만 누르면,
+        현재 PC에서 실행 중인 Anki에 카드가 바로 추가됩니다.
+      </p>
+
+      <div class="hero-actions">
+        <button id="testConnectionBtn" class="btn btn-secondary" type="button">
+          🔌 <span data-i18n="testConnection">연결 테스트</span>
+        </button>
+        <button id="loadSampleBtn" class="btn btn-secondary" type="button">
+          🧪 <span data-i18n="loadSample">예시 불러오기</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <aside class="card">
+        <h3 data-i18n="connectionSettings">연결 설정</h3>
+        <p class="card-description" data-i18n="settingsDescription">
+          아래 값은 브라우저에 자동 저장됩니다. 집과 학원 PC에서는 각각 한 번씩 설정하세요.
+        </p>
+
+        <div class="form-group">
+          <label for="ankiUrl" data-i18n="ankiUrl">AnkiConnect 주소</label>
+          <input id="ankiUrl" type="text" value="http://localhost:8765" />
+        </div>
+
+        <div class="form-group">
+          <label for="deckName" data-i18n="deckName">덱 이름</label>
+          <input id="deckName" type="text" value="Japanese" />
+        </div>
+
+        <div class="form-group">
+          <label for="modelName" data-i18n="modelName">노트 타입 이름</label>
+          <input id="modelName" type="text" value="Japanese Dictionary" />
+        </div>
+
+        <div class="button-row">
+          <button id="saveSettingsBtn" class="btn btn-secondary" type="button">
+            💾 <span data-i18n="saveSettings">Save settings</span>
+          </button>
+        </div>
+
+        <div id="status" class="status" data-i18n="initialStatus">
+          Anki를 실행한 뒤 연결 테스트를 눌러주세요.
+        </div>
+
+        <div class="mini-note" data-i18n-html="corsNote">
+          AnkiConnect 설정의 <code>webCorsOriginList</code>에
+          <code>https://signife.github.io</code>가 포함되어 있어야 합니다.
+        </div>
+
+        <div id="preview" class="preview" hidden>
+          <div class="preview-header" data-i18n="cardPreview">카드 미리보기</div>
+          <div class="preview-body">
+            <div id="previewWord" class="preview-word"></div>
+            <div id="previewReading" class="preview-reading"></div>
+
+            <div class="preview-section">
+              <strong>Definition</strong>
+              <div id="previewDefinition"></div>
+            </div>
+
+            <div class="preview-section">
+              <strong>Expressions</strong>
+              <ul id="previewExpressions"></ul>
+            </div>
+
+            <div class="preview-section">
+              <strong>Examples</strong>
+              <ul id="previewExamples"></ul>
+            </div>
+
+            <div class="preview-section">
+              <strong>Synonyms</strong>
+              <ul id="previewSynonyms"></ul>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="card">
+        <h3 data-i18n="cardJson">카드 JSON</h3>
+        <p class="card-description" data-i18n="jsonDescription">
+          ChatGPT가 생성한 JSON을 그대로 붙여넣으세요. 입력할 때마다 자동으로 검증하고 미리보기를 표시합니다.
+        </p>
+
+        <textarea id="jsonInput" spellcheck="false"></textarea>
+
+        <div class="button-row">
+          <button id="validateBtn" class="btn btn-secondary" type="button">
+            ✓ <span data-i18n="validateJson">JSON 검사</span>
+          </button>
+          <button id="clearBtn" class="btn btn-secondary" type="button">
+            🗑 <span data-i18n="clear">비우기</span>
+          </button>
+          <button id="addBtn" class="btn btn-primary" type="button">
+            ＋ <span data-i18n="addToAnki">Anki에 추가</span>
+          </button>
+        </div>
+      </section>
+    </section>
+
+    <footer class="footer" data-i18n="privacyNote">
+      카드 데이터는 이 페이지 서버에 저장되지 않고, 현재 PC의 AnkiConnect로만 전송됩니다.
+    </footer>
+  </main>
+
+  <div id="helpModal" class="modal-backdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <header class="modal-header">
+        <h2 id="helpTitle" data-i18n="howToUse">어떻게 사용하나요?</h2>
+        <button id="closeHelpBtn" class="modal-close" type="button" aria-label="Close">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="help-step">
+          <div class="step-number">1</div>
+          <div>
+            <h3 data-i18n="helpStep1Title">AnkiConnect 애드온 설치</h3>
+            <p data-i18n="helpStep1Body">
+              데스크톱 Anki에서 도구 → 부가 기능 → 부가 기능 가져오기를 열고 AnkiConnect를 설치하세요.
+              설치 후 Anki를 다시 실행합니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-number">2</div>
+          <div>
+            <h3 data-i18n="helpStep2Title">GitHub Pages 주소 허용</h3>
+            <p data-i18n="helpStep2Body">
+              Anki에서 도구 → 부가 기능 → AnkiConnect → 설정을 열고,
+              webCorsOriginList에 아래 주소를 추가하세요. 기존 설정은 지우지 말고 목록에 추가하면 됩니다.
+            </p>
+
+            <div class="code-block">
+              <button id="copyCorsBtn" class="copy-code" type="button" data-i18n="copy">복사</button>
+              <pre id="corsCode">{
+  "webCorsOriginList": [
+    "http://localhost",
+    "https://signife.github.io"
+  ]
+}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-number">3</div>
+          <div>
+            <h3 data-i18n="helpStep3Title">Anki 재시작 및 연결 확인</h3>
+            <p data-i18n="helpStep3Body">
+              설정을 저장한 뒤 Anki를 다시 시작하고, 이 페이지의 연결 테스트 버튼을 누르세요.
+              Anki는 카드 추가 중에 항상 실행 중이어야 합니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="help-step">
+          <div class="step-number">4</div>
+          <div>
+            <h3 data-i18n="helpStep4Title">카드 추가</h3>
+            <p data-i18n="helpStep4Body">
+              ChatGPT에서 만든 JSON을 붙여넣고 Anki에 추가 버튼을 누르면
+              선택한 덱과 노트 타입으로 카드가 저장됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const $ = (selector) => document.querySelector(selector);
+
+    const elements = {
+      root: document.documentElement,
+      themeToggle: $("#themeToggle"),
+      themeIcon: $("#themeIcon"),
+      themeLabel: $("#themeLabel"),
+      languageSelect: $("#languageSelect"),
+      helpBtn: $("#helpBtn"),
+      helpModal: $("#helpModal"),
+      closeHelpBtn: $("#closeHelpBtn"),
+      copyCorsBtn: $("#copyCorsBtn"),
+      corsCode: $("#corsCode"),
+      ankiUrl: $("#ankiUrl"),
+      deckName: $("#deckName"),
+      modelName: $("#modelName"),
+      saveSettingsBtn: $("#saveSettingsBtn"),
+      jsonInput: $("#jsonInput"),
+      status: $("#status"),
+      preview: $("#preview"),
+      previewWord: $("#previewWord"),
+      previewReading: $("#previewReading"),
+      previewDefinition: $("#previewDefinition"),
+      previewExpressions: $("#previewExpressions"),
+      previewExamples: $("#previewExamples"),
+      previewSynonyms: $("#previewSynonyms"),
+      testConnectionBtn: $("#testConnectionBtn"),
+      loadSampleBtn: $("#loadSampleBtn"),
+      validateBtn: $("#validateBtn"),
+      clearBtn: $("#clearBtn"),
+      addBtn: $("#addBtn")
+    };
+
+    const translations = {
+      ko: {
+        brandSubtitle: "ChatGPT 카드 데이터를 AnkiConnect로 바로 추가",
+        help: "도움말",
+        lightMode: "라이트 모드",
+        darkMode: "다크 모드",
+        heroTitle: "일본어 단어를<br />개인 사전 카드로 저장하세요.",
+        heroDescription: "ChatGPT에서 생성한 JSON을 붙여넣고 버튼 한 번만 누르면, 현재 PC에서 실행 중인 Anki에 카드가 바로 추가됩니다.",
+        testConnection: "연결 테스트",
+        loadSample: "예시 불러오기",
+        connectionSettings: "연결 설정",
+        settingsDescription: "아래 값은 브라우저에 자동 저장됩니다. 집과 학원 PC에서는 각각 한 번씩 설정하세요.",
+        ankiUrl: "AnkiConnect 주소",
+        deckName: "덱 이름",
+        modelName: "노트 타입 이름",
+        saveSettings: "설정 저장",
+        settingsSaved: "설정을 저장했습니다.",
+        initialStatus: "Anki를 실행한 뒤 연결 테스트를 눌러주세요.",
+        corsNote: 'AnkiConnect 설정의 <code>webCorsOriginList</code>에 <code>https://signife.github.io</code>가 포함되어 있어야 합니다.',
+        cardPreview: "카드 미리보기",
+        cardJson: "카드 JSON",
+        jsonDescription: "ChatGPT가 생성한 JSON을 그대로 붙여넣으세요. 입력할 때마다 자동으로 검증하고 미리보기를 표시합니다.",
+        validateJson: "JSON 검사",
+        clear: "비우기",
+        addToAnki: "Anki에 추가",
+        privacyNote: "카드 데이터는 이 페이지 서버에 저장되지 않고, 현재 PC의 AnkiConnect로만 전송됩니다.",
+        howToUse: "어떻게 사용하나요?",
+        helpStep1Title: "AnkiConnect 애드온 설치",
+        helpStep1Body: "데스크톱 Anki에서 도구 → 부가 기능 → 부가 기능 가져오기를 열고 AnkiConnect를 설치하세요. 설치 후 Anki를 다시 실행합니다.",
+        helpStep2Title: "GitHub Pages 주소 허용",
+        helpStep2Body: "Anki에서 도구 → 부가 기능 → AnkiConnect → 설정을 열고, webCorsOriginList에 아래 주소를 추가하세요. 기존 설정은 지우지 말고 목록에 추가하면 됩니다.",
+        helpStep3Title: "Anki 재시작 및 연결 확인",
+        helpStep3Body: "설정을 저장한 뒤 Anki를 다시 시작하고, 이 페이지의 연결 테스트 버튼을 누르세요. Anki는 카드 추가 중에 항상 실행 중이어야 합니다.",
+        helpStep4Title: "카드 추가",
+        helpStep4Body: "ChatGPT에서 만든 JSON을 붙여넣고 Anki에 추가 버튼을 누르면 선택한 덱과 노트 타입으로 카드가 저장됩니다.",
+        copy: "복사",
+        copied: "복사됨",
+        placeholder: `{
+  "word": "正義",
+  "reading": "せいぎ",
+  "definition": "正しい道理。また、社会を公平に保つための正しい考え方。",
+  "expressions": ["正義を貫く", "正義を守る"],
+  "examples": ["彼は最後まで自分の正義を貫いた。"],
+  "synonyms": ["公正", "正当", "道義"],
+  "kanji": {
+    "正": "音読み：セイ・ショウ／訓読み：ただしい・ただす",
+    "義": "音読み：ギ／意味：人として守るべき正しい道理"
+  }
+}`,
+        sampleLoaded: "예시 카드를 불러왔습니다.",
+        jsonValid: "JSON 형식이 정상입니다.",
+        cleared: "입력 내용을 비웠습니다.",
+        connecting: "AnkiConnect에 연결하는 중입니다…",
+        connectionSuccess: "연결 성공",
+        deckFound: "덱 확인",
+        deckMissing: "주의: 덱을 찾지 못했습니다",
+        modelFound: "노트 타입 확인",
+        modelMissing: "주의: 노트 타입을 찾지 못했습니다",
+        connectionFailed: "연결 실패",
+        connectionHelp: "Anki가 실행 중인지, AnkiConnect가 설치되어 있는지, CORS 설정에 GitHub Pages 주소가 등록되어 있는지 확인하세요.",
+        adding: "카드를 추가하는 중입니다…",
+        added: "추가 완료",
+        addFailed: "추가 실패",
+        duplicate: "카드가 이미 존재할 가능성이 있습니다."
+      },
+      ja: {
+        brandSubtitle: "ChatGPTのカードデータをAnkiConnectで直接追加",
+        help: "ヘルプ",
+        lightMode: "ライトモード",
+        darkMode: "ダークモード",
+        heroTitle: "日本語の単語を<br />自分だけの辞書カードに保存。",
+        heroDescription: "ChatGPTが生成したJSONを貼り付けてボタンを押すだけで、現在のPCで起動中のAnkiにカードを追加できます。",
+        testConnection: "接続テスト",
+        loadSample: "サンプル読込",
+        connectionSettings: "接続設定",
+        settingsDescription: "以下の値はブラウザーに自動保存されます。PCごとに一度設定してください。",
+        ankiUrl: "AnkiConnect URL",
+        deckName: "デッキ名",
+        modelName: "ノートタイプ名",
+        saveSettings: "設定を保存",
+        settingsSaved: "設定を保存しました。",
+        initialStatus: "Ankiを起動してから接続テストを押してください。",
+        corsNote: 'AnkiConnectの<code>webCorsOriginList</code>に<code>https://signife.github.io</code>を含めてください。',
+        cardPreview: "カードプレビュー",
+        cardJson: "カードJSON",
+        jsonDescription: "ChatGPTが生成したJSONをそのまま貼り付けてください。自動で検証し、プレビューを表示します。",
+        validateJson: "JSON確認",
+        clear: "クリア",
+        addToAnki: "Ankiに追加",
+        privacyNote: "カードデータはこのサイトに保存されず、現在のPCのAnkiConnectにのみ送信されます。",
+        howToUse: "使い方",
+        helpStep1Title: "AnkiConnectアドオンをインストール",
+        helpStep1Body: "デスクトップ版Ankiで、ツール → アドオン → アドオンを取得からAnkiConnectをインストールし、Ankiを再起動します。",
+        helpStep2Title: "GitHub PagesのURLを許可",
+        helpStep2Body: "Ankiでツール → アドオン → AnkiConnect → 設定を開き、webCorsOriginListに以下のURLを追加してください。既存の設定は削除せず、一覧に追加します。",
+        helpStep3Title: "Ankiを再起動して接続確認",
+        helpStep3Body: "設定を保存してAnkiを再起動し、このページの接続テストを押してください。カード追加中はAnkiを起動したままにします。",
+        helpStep4Title: "カードを追加",
+        helpStep4Body: "ChatGPTで作成したJSONを貼り付けてAnkiに追加を押すと、指定したデッキとノートタイプに保存されます。",
+        copy: "コピー",
+        copied: "コピー済み",
+        placeholder: "",
+        sampleLoaded: "サンプルカードを読み込みました。",
+        jsonValid: "JSON形式は正常です。",
+        cleared: "入力内容を消去しました。",
+        connecting: "AnkiConnectに接続しています…",
+        connectionSuccess: "接続成功",
+        deckFound: "デッキ確認",
+        deckMissing: "注意：デッキが見つかりません",
+        modelFound: "ノートタイプ確認",
+        modelMissing: "注意：ノートタイプが見つかりません",
+        connectionFailed: "接続失敗",
+        connectionHelp: "Ankiが起動中か、AnkiConnectがインストール済みか、CORS設定にGitHub PagesのURLが登録されているか確認してください。",
+        adding: "カードを追加しています…",
+        added: "追加完了",
+        addFailed: "追加失敗",
+        duplicate: "同じカードがすでに存在する可能性があります。"
+      },
+      en: {
+        brandSubtitle: "Add ChatGPT card data directly through AnkiConnect",
+        help: "Help",
+        lightMode: "Light mode",
+        darkMode: "Dark mode",
+        heroTitle: "Save Japanese words<br />as your personal dictionary cards.",
+        heroDescription: "Paste JSON generated by ChatGPT and add a card directly to Anki running on this computer.",
+        testConnection: "Test connection",
+        loadSample: "Load sample",
+        connectionSettings: "Connection settings",
+        settingsDescription: "These values are saved automatically in your browser. Configure them once on each computer.",
+        ankiUrl: "AnkiConnect URL",
+        deckName: "Deck name",
+        modelName: "Note type name",
+        saveSettings: "Save settings",
+        settingsSaved: "Settings saved.",
+        initialStatus: "Start Anki, then click Test connection.",
+        corsNote: 'Your AnkiConnect <code>webCorsOriginList</code> must include <code>https://signife.github.io</code>.',
+        cardPreview: "Card preview",
+        cardJson: "Card JSON",
+        jsonDescription: "Paste the JSON generated by ChatGPT. It will be validated automatically and previewed.",
+        validateJson: "Validate JSON",
+        clear: "Clear",
+        addToAnki: "Add to Anki",
+        privacyNote: "Card data is not stored on this website. It is sent only to AnkiConnect on this computer.",
+        howToUse: "How do I use this?",
+        helpStep1Title: "Install the AnkiConnect add-on",
+        helpStep1Body: "In desktop Anki, open Tools → Add-ons → Get Add-ons, install AnkiConnect, and restart Anki.",
+        helpStep2Title: "Allow the GitHub Pages origin",
+        helpStep2Body: "In Anki, open Tools → Add-ons → AnkiConnect → Config and add the following origin to webCorsOriginList. Keep your existing settings and add it to the list.",
+        helpStep3Title: "Restart Anki and test the connection",
+        helpStep3Body: "Save the config, restart Anki, and click Test connection on this page. Anki must remain open while adding cards.",
+        helpStep4Title: "Add a card",
+        helpStep4Body: "Paste JSON created by ChatGPT and click Add to Anki. The card will be saved to the selected deck and note type.",
+        copy: "Copy",
+        copied: "Copied",
+        placeholder: "",
+        sampleLoaded: "Sample card loaded.",
+        jsonValid: "The JSON format is valid.",
+        cleared: "The input was cleared.",
+        connecting: "Connecting to AnkiConnect…",
+        connectionSuccess: "Connected",
+        deckFound: "Deck found",
+        deckMissing: "Warning: deck not found",
+        modelFound: "Note type found",
+        modelMissing: "Warning: note type not found",
+        connectionFailed: "Connection failed",
+        connectionHelp: "Check that Anki is running, AnkiConnect is installed, and your GitHub Pages origin is allowed in the CORS config.",
+        adding: "Adding card…",
+        added: "Card added",
+        addFailed: "Failed to add card",
+        duplicate: "The card may already exist."
+      },
+      zh: {
+        brandSubtitle: "通过 AnkiConnect 直接添加 ChatGPT 卡片数据",
+        help: "帮助",
+        lightMode: "浅色模式",
+        darkMode: "深色模式",
+        heroTitle: "将日语单词<br />保存为个人词典卡片。",
+        heroDescription: "粘贴 ChatGPT 生成的 JSON，点击一次即可添加到当前电脑正在运行的 Anki。",
+        testConnection: "测试连接",
+        loadSample: "加载示例",
+        connectionSettings: "连接设置",
+        settingsDescription: "以下内容会自动保存在浏览器中。每台电脑只需设置一次。",
+        ankiUrl: "AnkiConnect 地址",
+        deckName: "牌组名称",
+        modelName: "笔记类型名称",
+        saveSettings: "保存设置",
+        settingsSaved: "设置已保存。",
+        initialStatus: "请先启动 Anki，然后点击测试连接。",
+        corsNote: 'AnkiConnect 的 <code>webCorsOriginList</code> 中必须包含 <code>https://signife.github.io</code>。',
+        cardPreview: "卡片预览",
+        cardJson: "卡片 JSON",
+        jsonDescription: "请直接粘贴 ChatGPT 生成的 JSON。系统会自动验证并显示预览。",
+        validateJson: "检查 JSON",
+        clear: "清空",
+        addToAnki: "添加到 Anki",
+        privacyNote: "卡片数据不会保存在本站，只会发送到当前电脑的 AnkiConnect。",
+        howToUse: "如何使用？",
+        helpStep1Title: "安装 AnkiConnect 插件",
+        helpStep1Body: "在桌面版 Anki 中打开 工具 → 插件 → 获取插件，安装 AnkiConnect，然后重启 Anki。",
+        helpStep2Title: "允许 GitHub Pages 地址",
+        helpStep2Body: "在 Anki 中打开 工具 → 插件 → AnkiConnect → 配置，在 webCorsOriginList 中加入以下地址。请保留原有设置并添加到列表中。",
+        helpStep3Title: "重启 Anki 并测试连接",
+        helpStep3Body: "保存配置后重启 Anki，再点击本页的测试连接。添加卡片时必须保持 Anki 运行。",
+        helpStep4Title: "添加卡片",
+        helpStep4Body: "粘贴 ChatGPT 生成的 JSON，然后点击添加到 Anki，卡片会保存到所选牌组和笔记类型。",
+        copy: "复制",
+        copied: "已复制",
+        placeholder: "",
+        sampleLoaded: "已加载示例卡片。",
+        jsonValid: "JSON 格式正确。",
+        cleared: "输入内容已清空。",
+        connecting: "正在连接 AnkiConnect…",
+        connectionSuccess: "连接成功",
+        deckFound: "已找到牌组",
+        deckMissing: "警告：未找到牌组",
+        modelFound: "已找到笔记类型",
+        modelMissing: "警告：未找到笔记类型",
+        connectionFailed: "连接失败",
+        connectionHelp: "请确认 Anki 正在运行、已安装 AnkiConnect，并且 CORS 配置中允许了 GitHub Pages 地址。",
+        adding: "正在添加卡片…",
+        added: "添加完成",
+        addFailed: "添加失败",
+        duplicate: "该卡片可能已经存在。"
+      }
+    };
+
+    const SAMPLE_CARD = {
+      word: "正義",
+      reading: "せいぎ",
+      definition: "正しい道理。また、社会を公平に保つための正しい考え方。",
+      expressions: ["正義を貫く", "正義を守る", "正義に反する", "正義の味方"],
+      examples: ["彼は最後まで自分の正義を貫いた。", "それは正義に反する行為だ。"],
+      synonyms: ["公正", "正当", "道義"],
+      kanji: {
+        "正": "音読み：セイ・ショウ／訓読み：ただしい・ただす",
+        "義": "音読み：ギ／意味：人として守るべき正しい道理"
+      }
+    };
+
+    let currentLanguage = "en";
+
+    function t(key) {
+      return translations[currentLanguage][key] ?? translations.en[key] ?? key;
+    }
+
+    function setStatus(message, type = "") {
+      elements.status.textContent = message;
+      elements.status.className = `status ${type}`.trim();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function listToHtml(items) {
+      if (!Array.isArray(items) || items.length === 0) return "";
+      return `<ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+    }
+
+    function kanjiToJson(kanji) {
+      if (!kanji || typeof kanji !== "object") return "{}";
+      return JSON.stringify(kanji);
+    }
+
+    function fillList(target, items) {
+      target.innerHTML = "";
+      for (const item of items ?? []) {
+        const li = document.createElement("li");
+        li.textContent = item;
+        target.appendChild(li);
+      }
+    }
+
+    function validateCard(card) {
+      if (!card || typeof card !== "object" || Array.isArray(card)) {
+        throw new Error("JSON top-level value must be an object.");
+      }
+
+      if (!card.word || typeof card.word !== "string") {
+        throw new Error("word is required.");
+      }
+
+      if (!card.reading || typeof card.reading !== "string") {
+        throw new Error("reading is required.");
+      }
+
+      if (!card.definition || typeof card.definition !== "string") {
+        throw new Error("definition is required.");
+      }
+
+      for (const key of ["expressions", "examples", "synonyms"]) {
+        if (card[key] !== undefined && !Array.isArray(card[key])) {
+          throw new Error(`${key} must be an array.`);
+        }
+      }
+
+      if (
+        card.kanji !== undefined &&
+        (typeof card.kanji !== "object" || Array.isArray(card.kanji) || card.kanji === null)
+      ) {
+        throw new Error("kanji must be an object.");
+      }
+
+      return card;
+    }
+
+    function parseInput() {
+      const raw = elements.jsonInput.value.trim();
+      if (!raw) throw new Error("Please enter JSON first.");
+      try {
+        return validateCard(JSON.parse(raw));
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          throw new Error(`JSON syntax error: ${error.message}`);
+        }
+        throw error;
+      }
+    }
+
+    function updatePreview(card) {
+      elements.preview.hidden = false;
+      elements.previewWord.textContent = card.word ?? "";
+      elements.previewReading.textContent = card.reading ?? "";
+      elements.previewDefinition.textContent = card.definition ?? "";
+      fillList(elements.previewExpressions, card.expressions);
+      fillList(elements.previewExamples, card.examples);
+      fillList(elements.previewSynonyms, card.synonyms);
+    }
+
+    function clearPreview() {
+      elements.preview.hidden = true;
+    }
+
+    function saveSettings(showMessage = false) {
+      const settings = {
+        ankiUrl: elements.ankiUrl.value.trim(),
+        deckName: elements.deckName.value.trim(),
+        modelName: elements.modelName.value.trim()
+      };
+
+      localStorage.setItem("anki-helper-settings", JSON.stringify(settings));
+      localStorage.setItem("anki-helper-language", currentLanguage);
+      localStorage.setItem("anki-helper-theme", elements.root.dataset.theme || "dark");
+
+      if (showMessage) {
+        setStatus(t("settingsSaved"), "success");
+      }
+    }
+
+    function loadSettings() {
+      const saved = localStorage.getItem("anki-helper-settings");
+      if (!saved) return;
+      try {
+        const settings = JSON.parse(saved);
+        if (settings.ankiUrl) elements.ankiUrl.value = settings.ankiUrl;
+        if (settings.deckName) elements.deckName.value = settings.deckName;
+        if (settings.modelName) elements.modelName.value = settings.modelName;
+      } catch {
+        localStorage.removeItem("anki-helper-settings");
+      }
+    }
+
+    function applyTheme(theme) {
+      elements.root.dataset.theme = theme;
+      localStorage.setItem("anki-helper-theme", theme);
+      const isDark = theme === "dark";
+      elements.themeIcon.textContent = isDark ? "☀️" : "🌙";
+      elements.themeLabel.textContent = isDark ? t("lightMode") : t("darkMode");
+    }
+
+    function applyLanguage(language) {
+      currentLanguage = translations[language] ? language : "en";
+      localStorage.setItem("anki-helper-language", currentLanguage);
+      elements.root.lang = currentLanguage === "zh" ? "zh-CN" : currentLanguage;
+      elements.languageSelect.value = currentLanguage;
+
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        node.textContent = t(node.dataset.i18n);
+      });
+
+      document.querySelectorAll("[data-i18n-html]").forEach((node) => {
+        node.innerHTML = t(node.dataset.i18nHtml);
+      });
+
+      elements.jsonInput.placeholder = translations.ko.placeholder;
+      applyTheme(elements.root.dataset.theme || "dark");
+    }
+
+    function openHelp() {
+      elements.helpModal.hidden = false;
+      document.body.classList.add("modal-open");
+      elements.closeHelpBtn.focus();
+    }
+
+    function closeHelp() {
+      elements.helpModal.hidden = true;
+      document.body.classList.remove("modal-open");
+      elements.helpBtn.focus();
+    }
+
+    async function invoke(action, params = {}) {
+      const url = elements.ankiUrl.value.trim() || "http://localhost:8765";
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, version: 6, params })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AnkiConnect HTTP error: ${response.status}`);
+      }
+
+      const payload = await response.json();
+      if (payload.error) throw new Error(payload.error);
+      return payload.result;
+    }
+
+    async function testConnection() {
+      elements.testConnectionBtn.disabled = true;
+      setStatus(t("connecting"));
+
+      try {
+        const version = await invoke("version");
+        const decks = await invoke("deckNames");
+        const models = await invoke("modelNames");
+        const deck = elements.deckName.value.trim();
+        const model = elements.modelName.value.trim();
+        const deckExists = decks.includes(deck);
+        const modelExists = models.includes(model);
+
+        const lines = [
+          `${t("connectionSuccess")} · AnkiConnect v${version}`,
+          deckExists ? `${t("deckFound")}: ${deck}` : `${t("deckMissing")}: ${deck}`,
+          modelExists ? `${t("modelFound")}: ${model}` : `${t("modelMissing")}: ${model}`
+        ];
+
+        setStatus(lines.join("\n"), deckExists && modelExists ? "success" : "warning");
+      } catch (error) {
+        setStatus(`${t("connectionFailed")}\n${error.message}\n\n${t("connectionHelp")}`, "error");
+      } finally {
+        elements.testConnectionBtn.disabled = false;
+      }
+    }
+
+    async function addToAnki() {
+      let card;
+      try {
+        card = parseInput();
+        updatePreview(card);
+      } catch (error) {
+        setStatus(error.message, "error");
+        return;
+      }
+
+      const deckName = elements.deckName.value.trim();
+      const modelName = elements.modelName.value.trim();
+
+      const note = {
+        deckName,
+        modelName,
+        fields: {
+          Word: escapeHtml(card.word),
+          Reading: escapeHtml(card.reading),
+          Definition: escapeHtml(card.definition),
+          Expressions: listToHtml(card.expressions),
+          Examples: listToHtml(card.examples),
+          Synonyms: listToHtml(card.synonyms),
+          KanjiData: kanjiToJson(card.kanji)
+        },
+        options: {
+          allowDuplicate: false,
+          duplicateScope: "deck"
+        },
+        tags: ["Japanese", "ChatGPT", "AnkiHelper"]
+      };
+
+      elements.addBtn.disabled = true;
+      setStatus(`${t("adding")} ${card.word}`);
+
+      try {
+        const noteId = await invoke("addNote", { note });
+        setStatus(`${t("added")}\n${card.word}\nNote ID: ${noteId}`, "success");
+        elements.jsonInput.value = "";
+        clearPreview();
+      } catch (error) {
+        const message = String(error.message || error);
+        if (message.toLowerCase().includes("duplicate")) {
+          setStatus(`${t("addFailed")}: ${t("duplicate")}`, "warning");
+        } else {
+          setStatus(`${t("addFailed")}\n${message}`, "error");
+        }
+      } finally {
+        elements.addBtn.disabled = false;
+      }
+    }
+
+    elements.themeToggle.addEventListener("click", () => {
+      const next = elements.root.dataset.theme === "dark" ? "light" : "dark";
+      applyTheme(next);
+    });
+
+    elements.languageSelect.addEventListener("change", (event) => {
+      applyLanguage(event.target.value);
+    });
+
+    elements.helpBtn.addEventListener("click", openHelp);
+    elements.closeHelpBtn.addEventListener("click", closeHelp);
+
+    elements.helpModal.addEventListener("click", (event) => {
+      if (event.target === elements.helpModal) closeHelp();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !elements.helpModal.hidden) closeHelp();
+    });
+
+    elements.copyCorsBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(elements.corsCode.textContent);
+        elements.copyCorsBtn.textContent = t("copied");
+        setTimeout(() => {
+          elements.copyCorsBtn.textContent = t("copy");
+        }, 1400);
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(elements.corsCode);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+
+    elements.saveSettingsBtn.addEventListener("click", () => {
+      saveSettings(true);
+    });
+
+    elements.testConnectionBtn.addEventListener("click", testConnection);
+
+    elements.loadSampleBtn.addEventListener("click", () => {
+      elements.jsonInput.value = JSON.stringify(SAMPLE_CARD, null, 2);
+      updatePreview(SAMPLE_CARD);
+      setStatus(t("sampleLoaded"), "success");
+    });
+
+    elements.validateBtn.addEventListener("click", () => {
+      try {
+        const card = parseInput();
+        updatePreview(card);
+        setStatus(t("jsonValid"), "success");
+      } catch (error) {
+        clearPreview();
+        setStatus(error.message, "error");
+      }
+    });
+
+    elements.clearBtn.addEventListener("click", () => {
+      elements.jsonInput.value = "";
+      clearPreview();
+      setStatus(t("cleared"));
+    });
+
+    elements.addBtn.addEventListener("click", addToAnki);
+
+    elements.jsonInput.addEventListener("input", () => {
+      const raw = elements.jsonInput.value.trim();
+      if (!raw) {
+        clearPreview();
+        return;
+      }
+
+      try {
+        updatePreview(validateCard(JSON.parse(raw)));
+      } catch {
+        clearPreview();
+      }
+    });
+
+    loadSettings();
+    applyTheme(localStorage.getItem("anki-helper-theme") || "dark");
+    applyLanguage(localStorage.getItem("anki-helper-language") || "en");
+  </script>
+</body>
+</html>
