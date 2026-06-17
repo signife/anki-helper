@@ -352,6 +352,58 @@
       line-height: 1.65;
     }
 
+    .voicevox-status {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: .82rem;
+      line-height: 1.45;
+    }
+
+    .voicevox-dot {
+      width: 9px;
+      height: 9px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: var(--warning);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--warning), transparent 82%);
+    }
+
+    .voicevox-status.success .voicevox-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--success), transparent 82%);
+    }
+
+    .voicevox-status.error .voicevox-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger), transparent 82%);
+    }
+
+    .checkbox-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 18px;
+      margin-top: 8px;
+    }
+
+    .checkbox-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: .84rem;
+      font-weight: 700;
+    }
+
+    .checkbox-item input {
+      width: 17px;
+      height: 17px;
+      margin: 0;
+      accent-color: var(--primary);
+    }
+
 
     .system-value {
       min-height: 46px;
@@ -778,6 +830,38 @@
         </div>
 
         <div class="form-group">
+          <label for="voicevoxUrl">VOICEVOX URL</label>
+          <input id="voicevoxUrl" type="text" value="http://127.0.0.1:50021" />
+          <div id="voicevoxStatus" class="voicevox-status">
+            <span class="voicevox-dot"></span>
+            <span id="voicevoxStatusText">VOICEVOX를 자동으로 확인하는 중입니다…</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="voicevoxSpeaker">VOICEVOX voice</label>
+          <select id="voicevoxSpeaker" class="form-select">
+            <option value="">VOICEVOX 실행 후 자동으로 불러옵니다</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="voicevoxSpeed">Speech speed</label>
+          <input id="voicevoxSpeed" type="number" min="0.5" max="2" step="0.05" value="1" />
+        </div>
+
+        <div class="checkbox-row">
+          <label class="checkbox-item">
+            <input id="generateWordAudio" type="checkbox" checked />
+            <span>Generate word audio</span>
+          </label>
+          <label class="checkbox-item">
+            <input id="generateExampleAudio" type="checkbox" checked />
+            <span>Generate example audio</span>
+          </label>
+        </div>
+
+        <div class="form-group">
           <label data-i18n="modelName">Note type name</label>
           <div class="system-value">
             <code>signife_anki_helper</code>
@@ -1028,6 +1112,13 @@
       corsCode: $("#corsCode"),
       ankiUrl: $("#ankiUrl"),
       deckName: $("#deckName"),
+      voicevoxUrl: $("#voicevoxUrl"),
+      voicevoxSpeaker: $("#voicevoxSpeaker"),
+      voicevoxSpeed: $("#voicevoxSpeed"),
+      generateWordAudio: $("#generateWordAudio"),
+      generateExampleAudio: $("#generateExampleAudio"),
+      voicevoxStatus: $("#voicevoxStatus"),
+      voicevoxStatusText: $("#voicevoxStatusText"),
       saveSettingsBtn: $("#saveSettingsBtn"),
       cardMode: $("#cardMode"),
       cardFont: $("#cardFont"),
@@ -1586,6 +1677,11 @@
       const settings = {
         ankiUrl: elements.ankiUrl.value.trim(),
         deckName: elements.deckName.value.trim(),
+        voicevoxUrl: elements.voicevoxUrl.value.trim(),
+        voicevoxSpeaker: elements.voicevoxSpeaker.value,
+        voicevoxSpeed: elements.voicevoxSpeed.value,
+        generateWordAudio: elements.generateWordAudio.checked,
+        generateExampleAudio: elements.generateExampleAudio.checked,
         cardMode: elements.cardMode.value,
         cardFont: elements.cardFont.value
       };
@@ -1607,6 +1703,11 @@
         const settings = JSON.parse(saved);
         if (settings.ankiUrl) elements.ankiUrl.value = settings.ankiUrl;
         if (settings.deckName) elements.deckName.value = settings.deckName;
+        if (settings.voicevoxUrl) elements.voicevoxUrl.value = settings.voicevoxUrl;
+        if (settings.voicevoxSpeaker !== undefined) elements.voicevoxSpeaker.dataset.savedValue = String(settings.voicevoxSpeaker);
+        if (settings.voicevoxSpeed) elements.voicevoxSpeed.value = settings.voicevoxSpeed;
+        if (settings.generateWordAudio !== undefined) elements.generateWordAudio.checked = Boolean(settings.generateWordAudio);
+        if (settings.generateExampleAudio !== undefined) elements.generateExampleAudio.checked = Boolean(settings.generateExampleAudio);
         if (settings.cardMode) elements.cardMode.value = settings.cardMode;
         if (settings.cardFont) elements.cardFont.value = settings.cardFont;
       } catch {
@@ -1697,10 +1798,234 @@
       return payload.result;
     }
 
+
+    function normalizeBaseUrl(value) {
+      return String(value || "").trim().replace(/\/+$/, "");
+    }
+
+    function setVoicevoxStatus(message, type = "") {
+      elements.voicevoxStatusText.textContent = message;
+      elements.voicevoxStatus.className = `voicevox-status ${type}`.trim();
+    }
+
+    async function voicevoxRequest(path, options = {}) {
+      const baseUrl = normalizeBaseUrl(elements.voicevoxUrl.value) || "http://127.0.0.1:50021";
+      const response = await fetch(`${baseUrl}${path}`, options);
+
+      if (!response.ok) {
+        const detail = await response.text().catch(() => "");
+        throw new Error(`VOICEVOX HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+      }
+
+      return response;
+    }
+
+    async function loadVoicevoxSpeakers({ quiet = false } = {}) {
+      if (!quiet) setVoicevoxStatus("VOICEVOX를 자동으로 확인하는 중입니다…");
+
+      try {
+        const [versionResponse, speakersResponse] = await Promise.all([
+          voicevoxRequest("/version"),
+          voicevoxRequest("/speakers")
+        ]);
+
+        const version = await versionResponse.json();
+        const speakers = await speakersResponse.json();
+        const savedValue =
+          elements.voicevoxSpeaker.value ||
+          elements.voicevoxSpeaker.dataset.savedValue ||
+          "";
+
+        elements.voicevoxSpeaker.innerHTML = "";
+
+        for (const speaker of speakers) {
+          for (const style of speaker.styles || []) {
+            const option = document.createElement("option");
+            option.value = String(style.id);
+            option.textContent = `${speaker.name} — ${style.name}`;
+            elements.voicevoxSpeaker.appendChild(option);
+          }
+        }
+
+        if (
+          savedValue &&
+          [...elements.voicevoxSpeaker.options].some(option => option.value === String(savedValue))
+        ) {
+          elements.voicevoxSpeaker.value = String(savedValue);
+        }
+
+        delete elements.voicevoxSpeaker.dataset.savedValue;
+        setVoicevoxStatus(`VOICEVOX 사용 가능 · v${version}`, "success");
+        saveSettings(false);
+        return true;
+      } catch (error) {
+        setVoicevoxStatus("VOICEVOX가 꺼져 있습니다. 음성 생성 시 실행해주세요.", "error");
+        if (!quiet) console.warn(error);
+        return false;
+      }
+    }
+
+    async function synthesizeVoicevox(text) {
+      const cleanText = String(text || "").trim();
+      if (!cleanText) throw new Error("VOICEVOX로 읽을 텍스트가 비어 있습니다.");
+
+      const speaker = Number(elements.voicevoxSpeaker.value);
+      if (!Number.isInteger(speaker)) {
+        const connected = await loadVoicevoxSpeakers();
+        if (!connected || !elements.voicevoxSpeaker.value) {
+          throw new Error("VOICEVOX를 실행한 뒤 다시 시도하세요.");
+        }
+      }
+
+      const selectedSpeaker = Number(elements.voicevoxSpeaker.value);
+      const queryResponse = await voicevoxRequest(
+        `/audio_query?text=${encodeURIComponent(cleanText)}&speaker=${selectedSpeaker}`,
+        { method: "POST" }
+      );
+      const query = await queryResponse.json();
+      query.speedScale = Number(elements.voicevoxSpeed.value) || 1;
+
+      const synthesisResponse = await voicevoxRequest(
+        `/synthesis?speaker=${selectedSpeaker}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(query)
+        }
+      );
+
+      return synthesisResponse.blob();
+    }
+
+    async function blobToBase64(blob) {
+      const buffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      const chunkSize = 0x8000;
+      let binary = "";
+
+      for (let index = 0; index < bytes.length; index += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+      }
+
+      return btoa(binary);
+    }
+
+    function makeAudioSource(text) {
+      return JSON.stringify({
+        text: String(text || "").trim(),
+        speaker: Number(elements.voicevoxSpeaker.value),
+        speed: Number(elements.voicevoxSpeed.value) || 1,
+        engine: "VOICEVOX"
+      });
+    }
+
+    function createUniqueAudioFilename(kind) {
+      const randomPart =
+        globalThis.crypto?.randomUUID?.().replaceAll("-", "").slice(0, 12) ||
+        Math.random().toString(36).slice(2, 14);
+
+      return `signife_${kind}_${Date.now()}_${randomPart}.wav`;
+    }
+
+    async function synthesizeAndStore(text, kind) {
+      const audioBlob = await synthesizeVoicevox(text);
+      const data = await blobToBase64(audioBlob);
+      const filename = createUniqueAudioFilename(kind);
+      const storedFilename = await invoke("storeMediaFile", { filename, data });
+      return `[sound:${storedFilename}]`;
+    }
+
+    async function createAudioFields(card) {
+      const fields = {
+        WordAudio: "",
+        ExamplesAudio: "",
+        WordAudioSource: "",
+        ExamplesAudioSource: ""
+      };
+
+      if (elements.generateWordAudio.checked) {
+        setStatus(`VOICEVOX 단어 음성 생성 중… ${card.word}`);
+        fields.WordAudio = await synthesizeAndStore(card.word, "word");
+        fields.WordAudioSource = makeAudioSource(card.word);
+      }
+
+      if (elements.generateExampleAudio.checked && Array.isArray(card.examples) && card.examples.length) {
+        const audioTags = [];
+
+        for (let index = 0; index < card.examples.length; index += 1) {
+          const example = String(card.examples[index] || "").trim();
+          if (!example) continue;
+
+          setStatus(`VOICEVOX 예문 음성 생성 중… ${index + 1}/${card.examples.length}`);
+          audioTags.push(await synthesizeAndStore(example, `example_${index + 1}`));
+        }
+
+        fields.ExamplesAudio = audioTags.join(" ");
+        fields.ExamplesAudioSource = makeAudioSource(card.examples.join("\n"));
+      }
+
+      return fields;
+    }
+
+    async function ensureVoicevoxFieldsAndTemplates(modelName, fontStack) {
+      const requiredFields = [
+        "CardMode",
+        "Word",
+        "Reading",
+        "Definition",
+        "NativeMeaning",
+        "Expressions",
+        "Examples",
+        "Synonyms",
+        "KanjiData",
+        "WordAudio",
+        "ExamplesAudio",
+        "WordAudioSource",
+        "ExamplesAudioSource"
+      ];
+
+      const existingFields = await invoke("modelFieldNames", { modelName });
+
+      for (const fieldName of requiredFields) {
+        if (!existingFields.includes(fieldName)) {
+          await invoke("modelFieldAdd", { modelName, fieldName });
+        }
+      }
+
+      try {
+        const templates = buildCardTemplates();
+        await invoke("updateModelTemplates", {
+          model: {
+            name: modelName,
+            templates: Object.fromEntries(
+              templates.map(template => [
+                template.Name,
+                { Front: template.Front, Back: template.Back }
+              ])
+            )
+          }
+        });
+      } catch (error) {
+        console.warn("Card template update skipped:", error);
+      }
+
+      try {
+        await invoke("updateModelStyling", {
+          model: {
+            name: modelName,
+            css: buildCardCss(fontStack)
+          }
+        });
+      } catch (error) {
+        console.warn("Card styling update skipped:", error);
+      }
+    }
+
     function buildCardTemplates() {
       const front = `
 <div class="card-shell">
   <div id="word" class="word" aria-label="{{Word}}"></div>
+  <div class="word-audio">{{WordAudio}}</div>
   <div id="kanjiPopup" class="kanji-popup" hidden></div>
 </div>
 
@@ -1773,6 +2098,7 @@
   <section class="section">
     <h2>Examples</h2>
     <div class="content-list">{{Examples}}</div>
+    <div class="examples-audio">{{ExamplesAudio}}</div>
   </section>
   {{/Examples}}
 
@@ -1861,6 +2187,20 @@
   margin-bottom: 8px;
   color: #ff6b6b;
   font-size: 2rem;
+}
+
+.word-audio,
+.examples-audio {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.word-audio {
+  min-height: 28px;
+}
+
+.examples-audio {
+  text-align: left;
 }
 
 .reading {
@@ -1956,7 +2296,8 @@ ${t("connectionHelp")}`, "error");
         const models = await invoke("modelNames");
 
         if (models.includes(modelName)) {
-          lines.push(`${t("setupModelExists")}: ${modelName}`);
+          await ensureVoicevoxFieldsAndTemplates(modelName, fontStack);
+          lines.push(`${t("setupModelExists")}: ${modelName} · VOICEVOX fields updated`);
         } else {
           await invoke("createModel", {
             modelName,
@@ -1969,7 +2310,11 @@ ${t("connectionHelp")}`, "error");
               "Expressions",
               "Examples",
               "Synonyms",
-              "KanjiData"
+              "KanjiData",
+              "WordAudio",
+              "ExamplesAudio",
+              "WordAudioSource",
+              "ExamplesAudioSource"
             ],
             css: buildCardCss(fontStack),
             isCloze: false,
@@ -2012,6 +2357,16 @@ ${t("connectionHelp")}`, "error");
         return;
       }
 
+      let audioFields;
+
+      try {
+        audioFields = await createAudioFields(card);
+      } catch (error) {
+        setStatus(`VOICEVOX 음성 생성 실패
+${String(error.message || error)}`, "error");
+        return;
+      }
+
       const note = {
         deckName,
         modelName,
@@ -2024,7 +2379,8 @@ ${t("connectionHelp")}`, "error");
           Expressions: listToHtml(card.expressions),
           Examples: listToHtml(card.examples),
           Synonyms: listToHtml(card.synonyms),
-          KanjiData: kanjiToJson(card.kanji)
+          KanjiData: kanjiToJson(card.kanji),
+          ...audioFields
         },
         options: {
           allowDuplicate: false,
@@ -2053,6 +2409,16 @@ ${t("connectionHelp")}`, "error");
         elements.addBtn.disabled = false;
       }
     }
+
+    elements.voicevoxUrl.addEventListener("change", async () => {
+      saveSettings(false);
+      await loadVoicevoxSpeakers();
+    });
+
+    elements.voicevoxSpeaker.addEventListener("change", () => saveSettings(false));
+    elements.voicevoxSpeed.addEventListener("change", () => saveSettings(false));
+    elements.generateWordAudio.addEventListener("change", () => saveSettings(false));
+    elements.generateExampleAudio.addEventListener("change", () => saveSettings(false));
 
     elements.themeToggle.addEventListener("click", () => {
       const next = elements.root.dataset.theme === "dark" ? "light" : "dark";
@@ -2161,6 +2527,7 @@ ${t("connectionHelp")}`, "error");
     applyTheme(localStorage.getItem("anki-helper-theme") || "dark");
     applyLanguage(localStorage.getItem("anki-helper-language") || "en");
     updateModeDetails();
+      loadVoicevoxSpeakers({ quiet: true });
   </script>
 </body>
 </html>
