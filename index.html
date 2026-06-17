@@ -2582,7 +2582,7 @@ ${String(error.message || error)}`;
       const frontWordMarkup = `
 <div class="word-area">
   <ruby class="word-ruby">
-    <rb id="frontWordCharacters" class="word-characters" aria-label="{{Word}}"></rb>
+    <rb class="word-static">{{Word}}</rb>
     <rt>{{Reading}}</rt>
   </ruby>
 </div>`;
@@ -2590,34 +2590,18 @@ ${String(error.message || error)}`;
       const backWordMarkup = `
 <div class="word-area">
   <ruby class="word-ruby">
-    <rb id="backWordCharacters" class="word-characters" aria-label="{{Word}}"></rb>
+    <rb id="wordCharacters" aria-label="{{Word}}"></rb>
     <rt>{{Reading}}</rt>
   </ruby>
 </div>
 <div id="kanjiPopup" class="kanji-popup" hidden></div>`;
 
-      const frontWordScript = `
-<script>
-(() => {
-  const rawWord = \`{{Word}}\`;
-  const wordEl = document.getElementById("frontWordCharacters");
-  if (!wordEl) return;
-
-  for (const character of [...rawWord]) {
-    const span = document.createElement("span");
-    span.className = "word-character";
-    span.textContent = character;
-    wordEl.appendChild(span);
-  }
-})();
-<\/script>`;
-
-      const backWordScript = `
+      const kanjiScript = `
 <script>
 (() => {
   const rawWord = \`{{Word}}\`;
   const rawKanji = \`{{KanjiData}}\`;
-  const wordEl = document.getElementById("backWordCharacters");
+  const wordEl = document.getElementById("wordCharacters");
   const popupEl = document.getElementById("kanjiPopup");
 
   if (!wordEl || !popupEl) return;
@@ -2631,20 +2615,20 @@ ${String(error.message || error)}`;
 
   for (const character of [...rawWord]) {
     const info = kanjiData[character];
-    const span = document.createElement("span");
+    const element = document.createElement(info ? "button" : "span");
 
-    span.textContent = character;
-    span.className = info
+    element.textContent = character;
+    element.className = info
       ? "word-character word-character-clickable"
       : "word-character";
 
     if (info) {
-      span.setAttribute("role", "button");
-      span.setAttribute("tabindex", "0");
-      span.setAttribute("aria-label", character + " 한자 정보 보기");
+      element.type = "button";
+      element.setAttribute("aria-label", character + " 한자 정보 보기");
 
-      const showInfo = (event) => {
+      element.addEventListener("click", (event) => {
         event.stopPropagation();
+
         popupEl.replaceChildren();
 
         const title = document.createElement("strong");
@@ -2655,35 +2639,10 @@ ${String(error.message || error)}`;
 
         popupEl.append(title, content);
         popupEl.hidden = false;
-
-        requestAnimationFrame(() => {
-          const shell = popupEl.closest(".card-shell");
-          if (!shell) return;
-
-          const targetRect = span.getBoundingClientRect();
-          const shellRect = shell.getBoundingClientRect();
-          const popupRect = popupEl.getBoundingClientRect();
-
-          const targetCenter = targetRect.left - shellRect.left + targetRect.width / 2;
-          const minLeft = popupRect.width / 2 + 10;
-          const maxLeft = shellRect.width - popupRect.width / 2 - 10;
-          const clampedLeft = Math.min(Math.max(targetCenter, minLeft), maxLeft);
-
-          popupEl.style.left = `${clampedLeft}px`;
-          popupEl.style.top = `${targetRect.top - shellRect.top + targetRect.height * 0.38}px`;
-        });
-      };
-
-      span.addEventListener("click", showInfo);
-      span.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          showInfo(event);
-        }
       });
     }
 
-    wordEl.appendChild(span);
+    wordEl.appendChild(element);
   }
 
   popupEl.addEventListener("click", event => event.stopPropagation());
@@ -2698,8 +2657,7 @@ ${String(error.message || error)}`;
 <div class="card-shell card-front">
   ${frontWordMarkup}
   <div class="word-audio">{{WordAudio}}</div>
-</div>
-${frontWordScript}`;
+</div>`;
 
       const back = `
 <div class="card-shell card-back">
@@ -2739,7 +2697,7 @@ ${frontWordScript}`;
   {{/Synonyms}}
 </div>
 
-${backWordScript}
+${kanjiScript}
 
 <script>
 (() => {
@@ -2789,10 +2747,6 @@ ${backWordScript}
   justify-content: center;
 }
 
-.card-back {
-  position: relative;
-}
-
 .word-area {
   display: flex;
   justify-content: center;
@@ -2802,41 +2756,34 @@ ${backWordScript}
 
 .word-ruby {
   font-family: ${fontStack};
-  font-size: clamp(2.8rem, 7vw, 4rem);
+  font-size: clamp(4rem, 12vw, 7rem);
   font-weight: 400;
-  line-height: 1.15;
-  letter-spacing: .035em;
+  line-height: 1.25;
+  letter-spacing: .045em;
   ruby-align: center;
-}
-
-.word-ruby rb,
-.word-characters,
-.word-character {
-  font-family: ${fontStack} !important;
-  font-size: inherit !important;
-  font-weight: inherit !important;
-  line-height: inherit !important;
-  letter-spacing: inherit !important;
 }
 
 .word-ruby rt {
   color: #c7c7c7;
   font-family: ${fontStack};
-  font-size: .32em;
+  font-size: .24em;
   font-weight: 500;
-  letter-spacing: .06em;
-  line-height: 1.15;
-}
-
-.word-characters {
-  display: inline;
-  white-space: nowrap;
+  letter-spacing: .08em;
+  line-height: 1.25;
 }
 
 .word-character {
   display: inline;
-  padding: 0 .025em;
+  padding: 0 .035em;
   color: inherit;
+  font: inherit;
+}
+
+button.word-character {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  background: transparent;
 }
 
 .word-character-clickable {
@@ -2857,37 +2804,18 @@ ${backWordScript}
 }
 
 .kanji-popup {
-  position: absolute;
-  z-index: 30;
-  width: min(460px, calc(100% - 24px));
-  margin: 0;
-  padding: 16px 18px;
-  border: 1px solid rgba(255,255,255,.24);
-  border-radius: 15px;
+  width: min(560px, calc(100% - 24px));
+  margin: 24px auto 0;
+  padding: 18px 20px;
+  border: 1px solid rgba(255,255,255,.20);
+  border-radius: 16px;
   color: #f5f7fb;
-  background: rgba(20,20,20,.82);
-  box-shadow: 0 16px 42px rgba(0,0,0,.38);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #1b1b1b;
+  box-shadow: 0 18px 44px rgba(0,0,0,.32);
   font-family: ${fontStack};
-  font-size: .96rem;
-  line-height: 1.75;
+  font-size: 1rem;
+  line-height: 1.8;
   white-space: pre-wrap;
-  transform: translate(-50%, -78%);
-  animation: kanjiPopupIn .15s ease-out;
-}
-
-.kanji-popup::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -7px;
-  width: 13px;
-  height: 13px;
-  border-right: 1px solid rgba(255,255,255,.24);
-  border-bottom: 1px solid rgba(255,255,255,.24);
-  background: rgba(20,20,20,.82);
-  transform: translateX(-50%) rotate(45deg);
 }
 
 .kanji-popup[hidden] {
@@ -2896,21 +2824,10 @@ ${backWordScript}
 
 .kanji-popup strong {
   display: block;
-  margin-bottom: 7px;
+  margin-bottom: 8px;
   color: #ffffff;
-  font-size: 1.8rem;
-  line-height: 1.15;
-}
-
-@keyframes kanjiPopupIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -70%) scale(.97);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -78%) scale(1);
-  }
+  font-size: 2rem;
+  line-height: 1.2;
 }
 
 .word-audio,
@@ -3000,18 +2917,11 @@ ${backWordScript}
   }
 
   .word-ruby {
-    font-size: clamp(2.6rem, 13vw, 3.5rem);
+    font-size: clamp(3.4rem, 18vw, 5.2rem);
   }
 
   .kanji-popup {
-    width: min(340px, calc(100% - 18px));
-    padding: 14px 15px;
-    font-size: .9rem;
-    transform: translate(-50%, -72%);
-  }
-
-  .kanji-popup strong {
-    font-size: 1.55rem;
+    font-size: .94rem;
   }
 }
 `;
