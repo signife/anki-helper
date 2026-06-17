@@ -878,7 +878,7 @@
         <div class="setup-box">
           <h4 data-i18n="automaticSetupTitle">Automatic Anki setup</h4>
           <p data-i18n-html="automaticSetupDescription">
-            Create the deck and the fixed <code>signife_anki_helper</code> note type with nine fields, one conditional card template, and CSS.
+            Create the deck and the fixed <code>signife_anki_helper</code> note type with thirteen fields, one conditional card template, and CSS.
           </p>
 
           <div class="form-group">
@@ -1166,7 +1166,7 @@
         saveSettings: "Save settings",
         settingsSaved: "Settings saved.",
         automaticSetupTitle: "Automatic Anki setup",
-        automaticSetupDescription: "Create the deck and the fixed <code>signife_anki_helper</code> note type with nine fields, one conditional card template, and CSS.",
+        automaticSetupDescription: "Create the deck and the fixed <code>signife_anki_helper</code> note type with thirteen fields, one conditional card template, and CSS.",
         cardMode: "Default card mode",
         details: "Details",
         cardModeHelp: "Each card uses CardMode: jp-jp shows the Japanese definition; jp-native shows the native-language meaning.",
@@ -1245,7 +1245,7 @@
         saveSettings: "설정 저장",
         settingsSaved: "설정을 저장했습니다.",
         automaticSetupTitle: "Anki 자동 설정",
-        automaticSetupDescription: "덱과 고정 노트 타입 <code>signife_anki_helper</code>, 필드 9개, 조건부 카드 템플릿과 CSS를 자동으로 생성합니다.",
+        automaticSetupDescription: "덱과 고정 노트 타입 <code>signife_anki_helper</code>, 필드 13개, 조건부 카드 템플릿과 CSS를 자동으로 생성합니다.",
         cardMode: "기본 카드 모드",
         details: "상세",
         cardModeHelp: "각 카드의 CardMode가 jp-jp이면 일본어 정의를, jp-native이면 모국어 뜻을 표시합니다.",
@@ -1324,7 +1324,7 @@
         saveSettings: "設定を保存",
         settingsSaved: "設定を保存しました。",
         automaticSetupTitle: "Anki自動セットアップ",
-        automaticSetupDescription: "デッキと固定ノートタイプ <code>signife_anki_helper</code>、9つのフィールド、条件分岐カードテンプレート、CSSを自動作成します。",
+        automaticSetupDescription: "デッキと固定ノートタイプ <code>signife_anki_helper</code>、13個のフィールド、条件分岐カードテンプレート、CSSを自動作成します。",
         cardMode: "既定のカードモード",
         details: "詳細",
         cardModeHelp: "各カードのCardModeがjp-jpなら日本語の定義、jp-nativeなら母語の意味を表示します。",
@@ -1403,7 +1403,7 @@
         saveSettings: "保存设置",
         settingsSaved: "设置已保存。",
         automaticSetupTitle: "Anki 自动设置",
-        automaticSetupDescription: "自动创建牌组、固定笔记类型 <code>signife_anki_helper</code>、9个字段、条件卡片模板和 CSS。",
+        automaticSetupDescription: "自动创建牌组、固定笔记类型 <code>signife_anki_helper</code>、13个字段、条件卡片模板和 CSS。",
         cardMode: "默认卡片模式",
         details: "详情",
         cardModeHelp: "每张卡片通过 CardMode 控制显示：jp-jp 显示日语释义，jp-native 显示母语含义。",
@@ -1627,6 +1627,17 @@
         if (card[key] !== undefined && !Array.isArray(card[key])) {
           throw new Error(`${key} must be an array.`);
         }
+      }
+
+      if (
+        card.exampleReadings !== undefined &&
+        !Array.isArray(card.exampleReadings)
+      ) {
+        throw new Error("exampleReadings must be an array.");
+      }
+
+      if (card.voiceText !== undefined && typeof card.voiceText !== "string") {
+        throw new Error("voiceText must be a string.");
       }
 
       if (
@@ -1944,9 +1955,10 @@
       };
 
       if (elements.generateWordAudio.checked) {
-        setStatus(`VOICEVOX 단어 음성 생성 중… ${card.word}`);
-        fields.WordAudio = await synthesizeAndStore(card.word, "word");
-        fields.WordAudioSource = makeAudioSource(card.word);
+        const wordVoiceText = String(card.voiceText || card.reading || card.word).trim();
+        setStatus(`VOICEVOX 단어 음성 생성 중… ${card.word} (${wordVoiceText})`);
+        fields.WordAudio = await synthesizeAndStore(wordVoiceText, "word");
+        fields.WordAudioSource = makeAudioSource(wordVoiceText);
       }
 
       if (elements.generateExampleAudio.checked && Array.isArray(card.examples) && card.examples.length) {
@@ -1956,8 +1968,14 @@
           const example = String(card.examples[index] || "").trim();
           if (!example) continue;
 
+          const exampleVoiceText = String(
+            Array.isArray(card.exampleReadings) && card.exampleReadings[index]
+              ? card.exampleReadings[index]
+              : example
+          ).trim();
+
           setStatus(`VOICEVOX 예문 음성 생성 중… ${index + 1}/${card.examples.length}`);
-          audioTags.push(await synthesizeAndStore(example, `example_${index + 1}`));
+          audioTags.push(await synthesizeAndStore(exampleVoiceText, `example_${index + 1}`));
         }
 
         fields.ExamplesAudio = audioTags.join(" ");
@@ -2022,47 +2040,73 @@
     }
 
     function buildCardTemplates() {
-      const front = `
-<div class="card-shell">
-  <div id="word" class="word" aria-label="{{Word}}"></div>
-  <div class="word-audio">{{WordAudio}}</div>
-  <div id="kanjiPopup" class="kanji-popup" hidden></div>
-</div>
+      const frontWordMarkup = `
+<div class="word-area">
+  <ruby class="word-ruby">
+    <rb class="word-static">{{Word}}</rb>
+    <rt>{{Reading}}</rt>
+  </ruby>
+</div>`;
 
+      const backWordMarkup = `
+<div class="word-area">
+  <ruby class="word-ruby">
+    <rb id="wordCharacters" aria-label="{{Word}}"></rb>
+    <rt>{{Reading}}</rt>
+  </ruby>
+</div>
+<div id="kanjiPopup" class="kanji-popup" hidden></div>`;
+
+      const kanjiScript = `
 <script>
 (() => {
   const rawWord = \`{{Word}}\`;
   const rawKanji = \`{{KanjiData}}\`;
-  const wordEl = document.getElementById("word");
+  const wordEl = document.getElementById("wordCharacters");
   const popupEl = document.getElementById("kanjiPopup");
+
+  if (!wordEl || !popupEl) return;
 
   let kanjiData = {};
   try {
     kanjiData = JSON.parse(rawKanji || "{}");
-  } catch (_) {}
+  } catch (_) {
+    kanjiData = {};
+  }
 
-  [...rawWord].forEach((character) => {
-    const span = document.createElement("button");
-    span.type = "button";
-    span.className = "kanji-character";
-    span.textContent = character;
+  for (const character of [...rawWord]) {
+    const info = kanjiData[character];
+    const element = document.createElement(info ? "button" : "span");
 
-    span.addEventListener("click", (event) => {
-      event.stopPropagation();
-      const info = kanjiData[character];
+    element.textContent = character;
+    element.className = info
+      ? "word-character word-character-clickable"
+      : "word-character";
 
-      if (!info) {
-        popupEl.hidden = true;
-        return;
-      }
+    if (info) {
+      element.type = "button";
+      element.setAttribute("aria-label", character + " 한자 정보 보기");
 
-      popupEl.innerHTML =
-        "<strong>" + character + "</strong><div>" + info + "</div>";
-      popupEl.hidden = false;
-    });
+      element.addEventListener("click", (event) => {
+        event.stopPropagation();
 
-    wordEl.appendChild(span);
-  });
+        popupEl.replaceChildren();
+
+        const title = document.createElement("strong");
+        title.textContent = character;
+
+        const content = document.createElement("div");
+        content.textContent = String(info);
+
+        popupEl.append(title, content);
+        popupEl.hidden = false;
+      });
+    }
+
+    wordEl.appendChild(element);
+  }
+
+  popupEl.addEventListener("click", event => event.stopPropagation());
 
   document.addEventListener("click", () => {
     popupEl.hidden = true;
@@ -2070,29 +2114,26 @@
 })();
 <\/script>`;
 
+      const front = `
+<div class="card-shell card-front">
+  ${frontWordMarkup}
+  <div class="word-audio">{{WordAudio}}</div>
+</div>`;
+
       const back = `
-<div class="card-shell">
-  <div class="answer-word">{{Word}}</div>
-  <div class="reading">{{Reading}}</div>
+<div class="card-shell card-back">
+  ${backWordMarkup}
+  <div class="word-audio">{{WordAudio}}</div>
 
   <div class="mode-source" data-card-mode="{{CardMode}}" hidden></div>
 
-  <section id="definitionSection" class="section">
-    <h2>Definition</h2>
+  <section id="definitionSection" class="section meaning-section">
     <div class="definition">{{Definition}}</div>
   </section>
 
-  <section id="nativeMeaningSection" class="section native-meaning-section">
-    <h2>Meaning</h2>
+  <section id="nativeMeaningSection" class="section meaning-section native-meaning-section">
     <div class="native-meaning">{{NativeMeaning}}</div>
   </section>
-
-  {{#Expressions}}
-  <section class="section">
-    <h2>Common expressions</h2>
-    <div class="content-list">{{Expressions}}</div>
-  </section>
-  {{/Expressions}}
 
   {{#Examples}}
   <section class="section">
@@ -2102,6 +2143,13 @@
   </section>
   {{/Examples}}
 
+  {{#Expressions}}
+  <section class="section">
+    <h2>Common expressions</h2>
+    <div class="content-list">{{Expressions}}</div>
+  </section>
+  {{/Expressions}}
+
   {{#Synonyms}}
   <section class="section">
     <h2>Synonyms</h2>
@@ -2109,6 +2157,8 @@
   </section>
   {{/Synonyms}}
 </div>
+
+${kanjiScript}
 
 <script>
 (() => {
@@ -2139,8 +2189,10 @@
   margin: 0;
   padding: 24px;
   color: #f5f7fb;
-  background: #20242b;
+  background: #262626;
   font-family: ${fontStack};
+  font-size: 20px;
+  line-height: 1.7;
   text-align: left;
 }
 
@@ -2149,95 +2201,165 @@
   margin: 0 auto;
 }
 
-.word,
-.answer-word {
-  text-align: center;
-  font-size: clamp(3.2rem, 11vw, 6.2rem);
-  line-height: 1.25;
-  letter-spacing: 0.06em;
+.card-front {
+  min-height: 52vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.kanji-character {
+.word-area {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+}
+
+.word-ruby {
+  font-family: ${fontStack};
+  font-size: clamp(4rem, 12vw, 7rem);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: .045em;
+  ruby-align: center;
+}
+
+.word-ruby rt {
+  color: #c7c7c7;
+  font-family: ${fontStack};
+  font-size: .24em;
+  font-weight: 500;
+  letter-spacing: .08em;
+  line-height: 1.25;
+}
+
+.word-character {
+  display: inline;
+  padding: 0 .035em;
+  color: inherit;
+  font: inherit;
+}
+
+button.word-character {
   appearance: none;
   border: 0;
-  padding: 0 0.04em;
-  color: inherit;
+  margin: 0;
   background: transparent;
-  font: inherit;
-  cursor: pointer;
 }
 
-.kanji-character:hover {
-  color: #ff6b6b;
+.word-character-clickable {
+  cursor: pointer;
+  border-radius: .08em;
+  transition:
+    color .16s ease,
+    background .16s ease,
+    text-shadow .16s ease;
+}
+
+.word-character-clickable:hover,
+.word-character-clickable:focus-visible {
+  color: #ffffff;
+  background: rgba(255,255,255,.08);
+  outline: none;
+  text-shadow: 0 0 14px rgba(255,255,255,.18);
 }
 
 .kanji-popup {
-  width: min(520px, 100%);
-  margin: 26px auto 0;
+  width: min(560px, calc(100% - 24px));
+  margin: 24px auto 0;
   padding: 18px 20px;
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 14px;
-  background: #15181d;
-  font-size: 1.05rem;
-  line-height: 1.75;
+  border: 1px solid rgba(255,255,255,.20);
+  border-radius: 16px;
+  color: #f5f7fb;
+  background: #1b1b1b;
+  box-shadow: 0 18px 44px rgba(0,0,0,.32);
+  font-family: ${fontStack};
+  font-size: 1rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.kanji-popup[hidden] {
+  display: none;
 }
 
 .kanji-popup strong {
   display: block;
   margin-bottom: 8px;
-  color: #ff6b6b;
+  color: #ffffff;
   font-size: 2rem;
+  line-height: 1.2;
 }
 
 .word-audio,
 .examples-audio {
-  margin-top: 14px;
+  margin-top: 18px;
   text-align: center;
 }
 
-.word-audio {
-  min-height: 28px;
+.word-audio .replay-button,
+.examples-audio .replay-button {
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
-.examples-audio {
-  text-align: left;
+.replay-button {
+  display: inline-grid !important;
+  place-items: center;
+  width: 50px !important;
+  height: 50px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
 }
 
-.reading {
-  margin-top: 6px;
-  text-align: center;
-  color: #aeb8c8;
-  font-size: 1.2rem;
+.replay-button svg {
+  width: 30px !important;
+  height: 30px !important;
 }
 
 .section {
-  margin-top: 26px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255,255,255,.13);
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255,255,255,.18);
 }
 
 .section h2 {
   margin: 0 0 12px;
-  color: #9eb4ff;
+  color: #bdbdbd;
+  font-family: ${fontStack};
   font-size: .82rem;
-  letter-spacing: .1em;
-  text-transform: uppercase;
+  letter-spacing: .06em;
+  text-transform: none;
+}
+
+.meaning-section {
+  text-align: center;
 }
 
 .definition,
 .native-meaning,
 .content-list {
-  font-size: 1.12rem;
+  font-family: ${fontStack};
+  font-size: 1.08rem;
   line-height: 1.85;
+  color: #f1f1f1;
+}
+
+.definition,
+.native-meaning {
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .native-meaning {
-  font-size: 1.38rem;
+  font-size: 1.28rem;
   font-weight: 700;
 }
 
-.native-meaning-section {
-  border-top-color: rgba(158,180,255,.38);
+.content-list {
+  color: #e2e2e2;
 }
 
 .content-list ul {
@@ -2246,14 +2368,26 @@
 }
 
 .content-list li {
-  margin: .45em 0;
+  margin: .5em 0;
 }
 
-.mobile .card {
-  padding: 18px;
+@media (max-width: 480px) {
+  .card {
+    padding: 18px;
+    font-size: 17px;
+  }
+
+  .word-ruby {
+    font-size: clamp(3.4rem, 18vw, 5.2rem);
+  }
+
+  .kanji-popup {
+    font-size: .94rem;
+  }
 }
 `;
     }
+
 
     async function testConnection() {
       elements.testConnectionBtn.disabled = true;
