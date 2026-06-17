@@ -2549,121 +2549,77 @@ ${String(error.message || error)}`;
         }
       }
 
-      try {
-        const templates = buildCardTemplates();
-        await invoke("updateModelTemplates", {
-          model: {
-            name: modelName,
-            templates: Object.fromEntries(
-              templates.map(template => [
-                template.Name,
-                { Front: template.Front, Back: template.Back }
-              ])
-            )
-          }
-        });
-      } catch (error) {
-        console.warn("Card template update skipped:", error);
-      }
+      const templates = buildCardTemplates();
 
-      try {
-        await invoke("updateModelStyling", {
-          model: {
-            name: modelName,
-            css: buildCardCss(fontStack)
-          }
-        });
-      } catch (error) {
-        console.warn("Card styling update skipped:", error);
-      }
-    }
+      await invoke("updateModelTemplates", {
+        model: {
+          name: modelName,
+          templates: Object.fromEntries(
+            templates.map(template => [
+              template.Name,
+              {
+                Front: template.Front,
+                Back: template.Back
+              }
+            ])
+          )
+        }
+      });
 
-    function buildCardTemplates() {
-      const frontWordMarkup = `
-<div class="word-area">
-  <ruby class="word-ruby">
-    <rb class="word-static">{{Word}}</rb>
-    <rt>{{Reading}}</rt>
-  </ruby>
-</div>`;
-
-      const backWordMarkup = `
-<div class="word-area">
-  <ruby class="word-ruby">
-    <rb id="wordCharacters" aria-label="{{Word}}"></rb>
-    <rt>{{Reading}}</rt>
-  </ruby>
-</div>
-<div id="kanjiPopup" class="kanji-popup" hidden></div>`;
-
-      const kanjiScript = `
-<script>
-(() => {
-  const rawWord = \`{{Word}}\`;
-  const rawKanji = \`{{KanjiData}}\`;
-  const wordEl = document.getElementById("wordCharacters");
-  const popupEl = document.getElementById("kanjiPopup");
-
-  if (!wordEl || !popupEl) return;
-
-  let kanjiData = {};
-  try {
-    kanjiData = JSON.parse(rawKanji || "{}");
-  } catch (_) {
-    kanjiData = {};
-  }
-
-  for (const character of [...rawWord]) {
-    const info = kanjiData[character];
-    const element = document.createElement(info ? "button" : "span");
-
-    element.textContent = character;
-    element.className = info
-      ? "word-character word-character-clickable"
-      : "word-character";
-
-    if (info) {
-      element.type = "button";
-      element.setAttribute("aria-label", character + " 한자 정보 보기");
-
-      element.addEventListener("click", (event) => {
-        event.stopPropagation();
-
-        popupEl.replaceChildren();
-
-        const title = document.createElement("strong");
-        title.textContent = character;
-
-        const content = document.createElement("div");
-        content.textContent = String(info);
-
-        popupEl.append(title, content);
-        popupEl.hidden = false;
+      await invoke("updateModelStyling", {
+        model: {
+          name: modelName,
+          css: buildCardCss(fontStack)
+        }
       });
     }
 
-    wordEl.appendChild(element);
+    function buildCardTemplates() {
+      const front = `
+<div class="card-shell card-front">
+  <div class="word-area">
+    <ruby class="word-ruby">
+      <rb id="frontWordCharacters" class="word-characters"></rb>
+      <rt>{{Reading}}</rt>
+    </ruby>
+    <span id="frontWordSource" hidden>{{Word}}</span>
+  </div>
+  <div class="word-audio">{{WordAudio}}</div>
+</div>
+
+<script>
+(() => {
+  const sourceEl = document.getElementById("frontWordSource");
+  const wordEl = document.getElementById("frontWordCharacters");
+  if (!sourceEl || !wordEl) return;
+
+  const rawWord = sourceEl.textContent || "";
+  for (const character of Array.from(rawWord)) {
+    const span = document.createElement("span");
+    span.className = "word-character";
+    span.textContent = character;
+    wordEl.appendChild(span);
   }
-
-  popupEl.addEventListener("click", event => event.stopPropagation());
-
-  document.addEventListener("click", () => {
-    popupEl.hidden = true;
-  });
 })();
 <\/script>`;
 
-      const front = `
-<div class="card-shell card-front">
-  ${frontWordMarkup}
-  <div class="word-audio">{{WordAudio}}</div>
-</div>`;
-
       const back = `
 <div class="card-shell card-back">
-  ${backWordMarkup}
-  <div class="word-audio">{{WordAudio}}</div>
+  <div class="word-area">
+    <ruby class="word-ruby">
+      <rb id="backWordCharacters" class="word-characters"></rb>
+      <rt>{{Reading}}</rt>
+    </ruby>
+    <span id="backWordSource" hidden>{{Word}}</span>
+    <span id="backKanjiSource" hidden>{{KanjiData}}</span>
+  </div>
 
+  <div id="kanjiPopup" class="kanji-popup" hidden>
+    <strong id="kanjiPopupTitle"></strong>
+    <div id="kanjiPopupContent"></div>
+  </div>
+
+  <div class="word-audio">{{WordAudio}}</div>
   <div class="mode-source" data-card-mode="{{CardMode}}" hidden></div>
 
   <section id="definitionSection" class="section meaning-section">
@@ -2697,11 +2653,121 @@ ${String(error.message || error)}`;
   {{/Synonyms}}
 </div>
 
-${kanjiScript}
-
 <script>
 (() => {
-  const mode = document.querySelector(".mode-source")?.dataset.cardMode || "jp-jp";
+  const wordSourceEl = document.getElementById("backWordSource");
+  const kanjiSourceEl = document.getElementById("backKanjiSource");
+  const wordEl = document.getElementById("backWordCharacters");
+  const popupEl = document.getElementById("kanjiPopup");
+  const popupTitleEl = document.getElementById("kanjiPopupTitle");
+  const popupContentEl = document.getElementById("kanjiPopupContent");
+
+  if (
+    !wordSourceEl ||
+    !kanjiSourceEl ||
+    !wordEl ||
+    !popupEl ||
+    !popupTitleEl ||
+    !popupContentEl
+  ) return;
+
+  const rawWord = wordSourceEl.textContent || "";
+  const rawKanji = kanjiSourceEl.textContent || "{}";
+
+  let kanjiData = {};
+  try {
+    kanjiData = JSON.parse(rawKanji);
+  } catch (_) {
+    kanjiData = {};
+  }
+
+  const hidePopup = () => {
+    popupEl.hidden = true;
+    popupEl.style.visibility = "hidden";
+  };
+
+  const positionPopup = (target) => {
+    popupEl.hidden = false;
+    popupEl.style.visibility = "hidden";
+    popupEl.style.left = "0px";
+    popupEl.style.top = "0px";
+
+    requestAnimationFrame(() => {
+      const targetRect = target.getBoundingClientRect();
+      const popupRect = popupEl.getBoundingClientRect();
+      const edge = 12;
+
+      let left =
+        targetRect.left +
+        targetRect.width / 2 -
+        popupRect.width / 2;
+
+      left = Math.max(
+        edge,
+        Math.min(left, window.innerWidth - popupRect.width - edge)
+      );
+
+      // 팝업의 아래쪽이 한자 윗부분과 약 16px 겹치도록 배치한다.
+      let top = targetRect.top - popupRect.height + 16;
+      top = Math.max(edge, top);
+
+      const arrowX =
+        targetRect.left +
+        targetRect.width / 2 -
+        left;
+
+      popupEl.style.left = left + "px";
+      popupEl.style.top = top + "px";
+      popupEl.style.setProperty("--arrow-x", arrowX + "px");
+      popupEl.style.visibility = "visible";
+    });
+  };
+
+  for (const character of Array.from(rawWord)) {
+    const info = kanjiData[character];
+    const span = document.createElement("span");
+
+    span.textContent = character;
+    span.className = info
+      ? "word-character word-character-clickable"
+      : "word-character";
+
+    if (info) {
+      span.setAttribute("role", "button");
+      span.setAttribute("tabindex", "0");
+      span.setAttribute("aria-label", character + " 한자 정보 보기");
+
+      const showPopup = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        popupTitleEl.textContent = character;
+        popupContentEl.textContent = String(info);
+        positionPopup(span);
+      };
+
+      span.addEventListener("click", showPopup);
+      span.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          showPopup(event);
+        }
+      });
+    }
+
+    wordEl.appendChild(span);
+  }
+
+  popupEl.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+
+  document.addEventListener("click", hidePopup);
+  window.addEventListener("resize", hidePopup);
+  window.addEventListener("scroll", hidePopup, true);
+
+  const mode =
+    document.querySelector(".mode-source")?.dataset.cardMode ||
+    "jp-jp";
   const definition = document.getElementById("definitionSection");
   const nativeMeaning = document.getElementById("nativeMeaningSection");
 
@@ -2727,7 +2793,7 @@ ${kanjiScript}
 .card {
   margin: 0;
   padding: 24px;
-  color: #f5f7fb;
+  color: #f5f5f5;
   background: #262626;
   font-family: ${fontStack};
   font-size: 20px;
@@ -2755,35 +2821,43 @@ ${kanjiScript}
 }
 
 .word-ruby {
-  font-family: ${fontStack};
-  font-size: clamp(4rem, 12vw, 7rem);
-  font-weight: 400;
-  line-height: 1.25;
-  letter-spacing: .045em;
+  font-family: ${fontStack} !important;
+  font-size: clamp(2.6rem, 6vw, 3.6rem) !important;
+  font-weight: 400 !important;
+  line-height: 1.16 !important;
+  letter-spacing: .035em !important;
   ruby-align: center;
 }
 
+.word-ruby rb,
+.word-characters,
+.word-character {
+  font-family: ${fontStack} !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  font-style: normal !important;
+  line-height: inherit !important;
+  letter-spacing: inherit !important;
+}
+
 .word-ruby rt {
-  color: #c7c7c7;
-  font-family: ${fontStack};
-  font-size: .24em;
-  font-weight: 500;
-  letter-spacing: .08em;
-  line-height: 1.25;
+  color: #c8c8c8;
+  font-family: ${fontStack} !important;
+  font-size: .32em !important;
+  font-weight: 400 !important;
+  line-height: 1.15 !important;
+  letter-spacing: .06em !important;
+}
+
+.word-characters {
+  display: inline;
+  white-space: nowrap;
 }
 
 .word-character {
   display: inline;
-  padding: 0 .035em;
+  padding: 0 .025em;
   color: inherit;
-  font: inherit;
-}
-
-button.word-character {
-  appearance: none;
-  border: 0;
-  margin: 0;
-  background: transparent;
 }
 
 .word-character-clickable {
@@ -2804,29 +2878,50 @@ button.word-character {
 }
 
 .kanji-popup {
-  width: min(560px, calc(100% - 24px));
-  margin: 24px auto 0;
-  padding: 18px 20px;
-  border: 1px solid rgba(255,255,255,.20);
-  border-radius: 16px;
-  color: #f5f7fb;
-  background: #1b1b1b;
-  box-shadow: 0 18px 44px rgba(0,0,0,.32);
+  position: fixed;
+  z-index: 9999;
+  width: min(360px, calc(100vw - 24px));
+  margin: 0;
+  padding: 15px 17px;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 15px;
+  color: #f7f7f7;
+  background: rgba(18,18,18,.84);
+  box-shadow: 0 18px 48px rgba(0,0,0,.48);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   font-family: ${fontStack};
-  font-size: 1rem;
-  line-height: 1.8;
+  font-size: .94rem;
+  line-height: 1.7;
+  text-align: left;
   white-space: pre-wrap;
+  visibility: hidden;
 }
 
 .kanji-popup[hidden] {
   display: none;
 }
 
+.kanji-popup::after {
+  content: "";
+  position: absolute;
+  left: var(--arrow-x, 50%);
+  bottom: -7px;
+  width: 13px;
+  height: 13px;
+  border-right: 1px solid rgba(255,255,255,.24);
+  border-bottom: 1px solid rgba(255,255,255,.24);
+  background: rgba(18,18,18,.84);
+  transform: translateX(-50%) rotate(45deg);
+}
+
 .kanji-popup strong {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: #ffffff;
-  font-size: 2rem;
+  font-family: ${fontStack};
+  font-size: 1.45rem;
+  font-weight: 500;
   line-height: 1.2;
 }
 
@@ -2879,10 +2974,10 @@ button.word-character {
 .definition,
 .native-meaning,
 .content-list {
+  color: #f1f1f1;
   font-family: ${fontStack};
   font-size: 1.08rem;
   line-height: 1.85;
-  color: #f1f1f1;
 }
 
 .definition,
@@ -2917,11 +3012,13 @@ button.word-character {
   }
 
   .word-ruby {
-    font-size: clamp(3.4rem, 18vw, 5.2rem);
+    font-size: clamp(2.2rem, 11vw, 3rem) !important;
   }
 
   .kanji-popup {
-    font-size: .94rem;
+    width: min(320px, calc(100vw - 18px));
+    padding: 13px 14px;
+    font-size: .88rem;
   }
 }
 `;
@@ -2979,7 +3076,7 @@ ${t("connectionHelp")}`, "error");
 
         if (models.includes(modelName)) {
           await ensureVoicevoxFieldsAndTemplates(modelName, fontStack);
-          lines.push(`${t("setupModelExists")}: ${modelName} · VOICEVOX fields updated`);
+          lines.push(`${t("setupModelExists")}: ${modelName} · templates and CSS updated`);
         } else {
           await invoke("createModel", {
             modelName,
