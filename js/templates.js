@@ -262,20 +262,20 @@ body,
 }
 
 .jlpt-front {
-  display: grid;
-  place-items: center;
-  padding: 24px;
+  display: block;
+  padding: 0;
+ 
 }
 
 .front-center {
-  width: min(760px, 100%);
-  min-height: 60vh;
+  width: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   gap: 18px;
-  padding: 42px 24px 30px;
+  padding: 20px 18px 14px;
 }
 
 .back-layout {
@@ -287,7 +287,7 @@ body,
 
 .back-header {
   padding: 20px 18px 14px;
-  background: #222;
+  
   text-align: center;
 }
 
@@ -433,17 +433,21 @@ body,
 }
 
 .detail-label {
-  margin-bottom: 7px;
+  margin-bottom: 10px;
   color: #252525;
-  font-size: .9rem;
+  font-size: 1.05rem;
   font-weight: 700;
+  text-align: center;
 }
 
 .content-list {
   color: #111;
   font-family: ${fontStack};
-  font-size: 1rem;
-  line-height: 1.65;
+  font-size: 1.15rem;
+  line-height: 1.8;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .content-list p:first-child,
@@ -460,7 +464,14 @@ body,
 
 .content-list ul,
 .content-list ol {
-  padding-left: 1.3em;
+  margin-left: 0;
+  padding-left: 0;
+  list-style: none;
+  text-align: center;
+}
+.content-list li {
+  margin: .65em 0;
+  text-align: center;
 }
 
 .content-list ruby rt {
@@ -511,6 +522,7 @@ body,
 }
 
 @media (max-width: 480px) {
+  .front-center,
   .back-header {
     padding: 16px 12px 11px;
   }
