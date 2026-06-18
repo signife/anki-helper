@@ -2,12 +2,11 @@
 
 <p align="center">
   <a href="./README.md">English</a> ·
-  <a href="./README.ja.md">日本語</a> ·
   <strong>한국어</strong>
 </p>
 
 <p align="center">
-  <a href="https://signife.github.io/ankicards/">
+  <a href="https://signife.github.io/anki-helper/">
     <img
       src="https://img.shields.io/badge/Open%20Web%20App-Anki%20Vocabulary%20Helper-2EA44F?style=for-the-badge"
       alt="Open Anki Vocabulary Helper"
@@ -154,7 +153,7 @@ http://127.0.0.1:10101
 API 문서:
 
 ```text
-http://127.0.0.1:10101/docs
+http://127.0.0.1:10101/setting
 ```
 
 브라우저 접근이 차단될 경우 AivisSpeech에서 다음 origin을 허용합니다.
@@ -405,7 +404,7 @@ export const SPEECH_ENGINE = {
   name: "AivisSpeech",
   defaultUrl: "http://127.0.0.1:10101",
   websiteUrl: "https://aivis-project.com/",
-  settingsUrl: "http://127.0.0.1:10101/docs",
+  settingsUrl: "http://127.0.0.1:10101/setting",
   sourceName: "AivisSpeech"
 };
 ```
@@ -444,7 +443,7 @@ http://localhost:8000
 
 - AivisSpeech가 실행 중인지
 - URL이 `http://127.0.0.1:10101`인지
-- `http://127.0.0.1:10101/docs`가 열리는지
+- `http://127.0.0.1:10101/setting`가 열리는지
 - 사이트 origin이 허용되어 있는지
 - 설정 변경 후 AivisSpeech를 다시 시작했는지
 
