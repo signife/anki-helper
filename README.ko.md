@@ -1,9 +1,9 @@
 # Anki Vocabulary Helper
 
 <p align="center">
-  <strong>English</strong> ·
+  <a href="./README.md">English</a> ·
   <a href="./README.ja.md">日本語</a> ·
-  <a href="./README.ko.md">한국어</a>
+  <strong>한국어<strong>
 </p>
 
 <p align="center">
