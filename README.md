@@ -145,7 +145,7 @@ http://127.0.0.1:10101
 API documentation:
 
 ```text
-http://127.0.0.1:10101/docs
+http://127.0.0.1:10101/setting
 ```
 
 When browser access is blocked, allow the following origin in AivisSpeech:
