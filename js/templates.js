@@ -97,6 +97,14 @@ export function buildCardTemplates() {
       <div class="meaning-divider"></div>
     </header>
 
+    <div class="reading-controls">
+      <label for="toggle-ruby" class="toggle-switch">
+        <input type="checkbox" id="toggle-ruby">
+        <span class="slider"></span>
+        요미가나
+      </label>
+    </div>
+
     <main class="detail-tray">
       {{#Examples}}
       <section class="detail-section examples-section">
@@ -207,12 +215,37 @@ export function buildCardTemplates() {
   const definition = document.getElementById("definitionSection");
   const nativeMeaning = document.getElementById("nativeMeaningSection");
 
-  if (mode === "jp-native") {
+    if (mode === "jp-native") {
     if (definition) definition.hidden = true;
     if (nativeMeaning) nativeMeaning.hidden = false;
   } else {
     if (definition) definition.hidden = false;
     if (nativeMeaning) nativeMeaning.hidden = true;
+  }
+
+  const toggleRuby = document.getElementById("toggle-ruby");
+  const detailTray = document.querySelector(".detail-tray");
+
+  if (toggleRuby && detailTray) {
+    const rts = detailTray.querySelectorAll("ruby rt");
+
+    let rubyOn = localStorage.getItem("rubyOn");
+    rubyOn = rubyOn === null ? true : rubyOn === "true";
+
+    toggleRuby.checked = rubyOn;
+
+    const updateRuby = () => {
+      rts.forEach(rt => {
+        rt.style.display = toggleRuby.checked ? "" : "none";
+      });
+    };
+
+    updateRuby();
+
+    toggleRuby.addEventListener("change", () => {
+      localStorage.setItem("rubyOn", String(toggleRuby.checked));
+      updateRuby();
+    });
   }
 })();
 <\/script>`;
@@ -245,6 +278,7 @@ body,
   background: #222;
   font-family: ${fontStack};
   font-size: 18px;
+  font-weight: 400;
   line-height: 1.65;
   text-align: left;
 }
@@ -296,6 +330,15 @@ body,
   justify-content: center;
   width: 100%;
   text-align: center;
+}
+
+
+.word-ruby,
+.word-ruby rb,
+.word-characters,
+.word-character,
+.word-ruby rt {
+  font-synthesis: none;
 }
 
 .word-ruby {
@@ -387,6 +430,32 @@ body,
   background: rgba(255,255,255,.22);
 }
 
+.reading-controls {
+  padding: 0 18px 10px;
+  text-align: center;
+}
+
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #ddd;
+  font-family: ${fontStack};
+  font-size: .85rem;
+  font-weight: 400;
+  line-height: 1.3;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-switch input {
+  cursor: pointer;
+}
+
+.slider {
+  display: inline-block;
+}
+
 .meaning-section {
   min-height: 1.7em;
   padding: 0 8px;
@@ -400,7 +469,7 @@ body,
   color: #fff;
   font-family: ${fontStack};
   font-size: clamp(1.35rem, 4vw, 2rem);
-  font-weight: 600;
+  font-weight: 400;
   line-height: 1.35;
   text-align: center;
 }
@@ -474,9 +543,16 @@ body,
   text-align: center;
 }
 
+.content-list ruby {
+  ruby-align: center;
+}
+
 .content-list ruby rt {
   color: #8d1717;
+  font-family: ${fontStack};
   font-size: .58em;
+  font-weight: 400;
+  line-height: 1;
 }
 
 .word-character-clickable {
@@ -486,7 +562,7 @@ body,
 
 .word-character-clickable.clicked {
   color: #d32f2f;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
   transform: scale(1.06);
 }
 

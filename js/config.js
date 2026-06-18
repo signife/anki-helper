@@ -1,7 +1,7 @@
 export const MODEL_NAME = "signife_anki_helper";
 
 export const CARD_FONT_STACKS = {
-  "ms-mincho": '"MS Mincho", "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif CJK JP", "Noto Serif JP", serif',
+  "ms-mincho": '"MS Mincho", "ＭＳ 明朝", serif',
   "yu-mincho": '"Yu Mincho", "MS Mincho", "Hiragino Mincho ProN", "Noto Serif CJK JP", serif',
   "meiryo": '"Meiryo", "Yu Gothic", "Hiragino Sans", "Noto Sans CJK JP", sans-serif',
   "yu-gothic": '"Yu Gothic", "Meiryo", "Hiragino Sans", "Noto Sans CJK JP", sans-serif',

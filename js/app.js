@@ -162,6 +162,46 @@ function listToHtml(items) {
   return `<ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 
+function sanitizeRubyHtml(value) {
+  const template = document.createElement("template");
+  template.innerHTML = String(value ?? "");
+
+  const allowedTags = new Set(["RUBY", "RB", "RT", "RP", "BR"]);
+  const walker = document.createTreeWalker(
+    template.content,
+    NodeFilter.SHOW_ELEMENT
+  );
+
+  const elementsToRemove = [];
+
+  while (walker.nextNode()) {
+    const element = walker.currentNode;
+
+    if (!allowedTags.has(element.tagName)) {
+      elementsToRemove.push(element);
+      continue;
+    }
+
+    for (const attribute of Array.from(element.attributes)) {
+      element.removeAttribute(attribute.name);
+    }
+  }
+
+  for (const element of elementsToRemove) {
+    element.replaceWith(document.createTextNode(element.textContent || ""));
+  }
+
+  return template.innerHTML;
+}
+
+function rubyListToHtml(items) {
+  if (!Array.isArray(items) || items.length === 0) return "";
+
+  return `<ul>${items
+    .map(item => `<li class="ruby-list-item">${sanitizeRubyHtml(item)}</li>`)
+    .join("")}</ul>`;
+}
+
 function kanjiToJson(kanji) {
   if (!kanji || typeof kanji !== "object") return "{}";
   return JSON.stringify(kanji);
@@ -878,26 +918,26 @@ async function addOneCardToAnki(card, index, total) {
   const audioFields = await createAudioFields(card, progressPrefix);
 
   const note = {
-    deckName,
-    modelName,
-    fields: {
-      CardMode: escapeHtml(card.cardMode),
-      Word: escapeHtml(card.word),
-      Reading: escapeHtml(card.reading),
-      Definition: escapeHtml(card.definition),
-      NativeMeaning: escapeHtml(card.nativeMeaning),
-      Expressions: listToHtml(card.expressions),
-      Examples: listToHtml(card.examples),
-      Synonyms: listToHtml(card.synonyms),
-      KanjiData: kanjiToJson(card.kanji),
-      ...audioFields
-    },
-    options: {
-      allowDuplicate: false,
-      duplicateScope: "deck"
-    },
-    tags: ["Japanese", "ChatGPT", "AnkiHelper"]
-  };
+  deckName,
+  modelName,
+  fields: {
+    CardMode: escapeHtml(card.cardMode),
+    Word: escapeHtml(card.word),
+    Reading: escapeHtml(card.reading),
+    Definition: escapeHtml(card.definition),
+    NativeMeaning: escapeHtml(card.nativeMeaning),
+    Expressions: rubyListToHtml(card.expressions),
+    Examples: rubyListToHtml(card.examples),
+    Synonyms: listToHtml(card.synonyms),
+    KanjiData: kanjiToJson(card.kanji),
+    ...audioFields
+  },
+  options: {
+    allowDuplicate: false,
+    duplicateScope: "deck"
+  },
+  tags: ["Japanese", "ChatGPT", "AnkiHelper"]
+};
 
   updateOperationProgress(`${progressPrefix}Anki에 저장하는 중… ${card.word}`);
   const noteId = await invoke("addNote", { note });
@@ -1045,14 +1085,51 @@ elements.copyOriginBtn.addEventListener("click", async () => {
 });
 
 elements.copyPromptBtn.addEventListener("click", async () => {
-  const prompt = `다음 일본어 단어를 signife_anki_helper용 카드 JSON 하나로 만들어줘.
-JSON 이외의 설명과 코드 블록은 출력하지 마.
-필드:
+  const prompt = `Create one valid JSON object for the signife_anki_helper Anki note type from the following Japanese word or grammar expression.
+
+Output JSON only.
+Do not include explanations, markdown, or code fences.
+
+Required fields:
 cardMode, word, reading, definition, nativeMeaning, expressions, examples, exampleReadings, synonyms, kanji.
-reading은 표제어 전체의 정확한 히라가나 독음으로 작성해.
-exampleReadings는 examples와 같은 순서로 각 예문의 전체 히라가나 독음을 작성해.
-kanji는 표제어에 포함된 각 한자의 읽기와 의미를 객체로 작성해.
-cardMode는 jp-native로 작성해.`;
+
+Rules:
+1. cardMode must be "jp-native".
+2. word must contain the target Japanese word or grammar expression.
+3. reading must contain the full hiragana reading of the target word or expression.
+4. definition must be a natural Japanese dictionary-style definition.
+5. nativeMeaning must be a natural meaning in the user's native language.
+6. expressions must contain 3 to 5 common collocations or fixed expressions.
+7. examples must contain 2 natural Japanese example sentences.
+8. exampleReadings must contain the full hiragana readings of examples, in the same order.
+9. synonyms must contain 2 to 4 synonyms or similar expressions.
+10. kanji must be an object. For each kanji in the target word, include its onyomi, kunyomi, and meaning.
+11. If there is no information for a field, use [] or {}, not null.
+12. The JSON must be valid. Do not add trailing commas.
+
+Ruby rules for expressions and examples:
+- In expressions and examples, add furigana to kanji by using HTML ruby tags.
+- Use this exact format:
+  <ruby><rb>漢字</rb><rt>かんじ</rt></ruby>
+- Do not add ruby tags to hiragana, katakana, particles, or punctuation.
+- Keep the sentence natural and readable.
+
+Example of ruby format:
+<ruby><rb>彼</rb><rt>かれ</rt></ruby>は<ruby><rb>最後</rb><rt>さいご</rt></ruby>まで<ruby><rb>自分</rb><rt>じぶん</rt></ruby>の<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>を<ruby><rb>貫</rb><rt>つらぬ</rt></ruby>いた。
+
+Output format:
+{
+  "cardMode": "jp-native",
+  "word": "",
+  "reading": "",
+  "definition": "",
+  "nativeMeaning": "",
+  "expressions": [],
+  "examples": [],
+  "exampleReadings": [],
+  "synonyms": [],
+  "kanji": {}
+}`;
   await navigator.clipboard.writeText(prompt);
   elements.copyPromptBtn.textContent = t("copied");
   setTimeout(() => {
