@@ -77,24 +77,34 @@
         </div>
 
         <div class="form-group">
-          <label for="voicevoxUrl">VOICEVOX URL</label>
-          <input id="voicevoxUrl" type="text" value="http://127.0.0.1:50021" />
-          <div id="voicevoxStatus" class="voicevox-status">
+          <label for="speechEngineUrl" data-i18n="speechEngineUrl">Speech engine URL</label>
+          <input
+            id="speechEngineUrl"
+            type="text"
+            value=""
+            placeholder="Loaded from config.js"
+            autocomplete="off"
+          />
+          <div id="speechEngineStatus" class="voicevox-status speech-engine-status">
             <span class="voicevox-dot"></span>
-            <span id="voicevoxStatusText">VOICEVOX를 자동으로 확인하는 중입니다…</span>
+            <span id="speechEngineStatusText" data-i18n="speechEngineChecking">
+              Checking the speech engine…
+            </span>
           </div>
         </div>
 
         <div class="form-group">
-          <label for="voicevoxSpeaker">VOICEVOX voice</label>
-          <select id="voicevoxSpeaker" class="form-select">
-            <option value="">VOICEVOX 실행 후 자동으로 불러옵니다</option>
+          <label for="speechEngineSpeaker" data-i18n="speechEngineVoice">Speech engine voice</label>
+          <select id="speechEngineSpeaker" class="form-select">
+            <option value="" data-i18n="speechEngineVoicePlaceholder">
+              Voices are loaded automatically after the speech engine starts
+            </option>
           </select>
         </div>
 
         <div class="form-group">
-          <label for="voicevoxSpeed">Speech speed</label>
-          <input id="voicevoxSpeed" type="number" min="0.5" max="2" step="0.05" value="1" />
+          <label for="speechEngineSpeed" data-i18n="speechSpeed">Speech speed</label>
+          <input id="speechEngineSpeed" type="number" min="0.5" max="2" step="0.05" value="1" />
         </div>
 
         <div class="checkbox-row">
@@ -248,7 +258,7 @@
         </p>
 
         <div id="status" class="status status-inline" data-i18n="initialStatus" role="status" aria-live="polite">
-          Start Anki and VOICEVOX, then check the connections.
+          Start Anki and the configured speech engine, then check the connections.
         </div>
 
         <textarea id="jsonInput" spellcheck="false"></textarea>
@@ -338,10 +348,12 @@
         <div class="help-step">
           <div class="step-number">3</div>
           <div>
-            <h3 data-i18n="helpStep3Title">Install VOICEVOX</h3>
-            <p data-i18n="helpStep3Body">Install VOICEVOX, launch it once, and add the voices you want to use.</p>
+            <h3 data-i18n="helpStep3Title">Install the speech engine</h3>
+            <p data-i18n="helpStep3Body">Install the configured speech engine, launch it once, and add the voices you want to use.</p>
             <div class="help-actions">
-              <button id="openVoicevoxBtn" class="btn btn-secondary" type="button" data-i18n="openVoicevox">Open VOICEVOX website</button>
+              <button id="openSpeechEngineBtn" class="btn btn-secondary" type="button" data-i18n="openSpeechEngine">
+                Open speech engine website
+              </button>
             </div>
           </div>
         </div>
@@ -349,10 +361,12 @@
         <div class="help-step">
           <div class="step-number">4</div>
           <div>
-            <h3 data-i18n="helpStep4Title">Allow this website in VOICEVOX</h3>
-            <p data-i18n="helpStep4Body">With VOICEVOX running, open its setting page. Add https://signife.github.io to Allow Origin, save, completely close VOICEVOX, and start it again.</p>
+            <h3 data-i18n="helpStep4Title">Allow this website in the speech engine</h3>
+            <p data-i18n="helpStep4Body">Open the configured speech engine settings and allow https://signife.github.io when required.</p>
             <div class="help-actions">
-              <button id="openVoicevoxSettingBtn" class="btn btn-secondary" type="button" data-i18n="openVoicevoxSetting">Open VOICEVOX policy settings</button>
+              <button id="openSpeechEngineSettingBtn" class="btn btn-secondary" type="button" data-i18n="openSpeechEngineSetting">
+                Open speech engine settings
+              </button>
               <button id="copyOriginBtn" class="btn btn-secondary" type="button" data-i18n="copyOrigin">Copy https://signife.github.io</button>
             </div>
           </div>
@@ -361,8 +375,8 @@
         <div class="help-step">
           <div class="step-number">5</div>
           <div>
-            <h3 data-i18n="helpStep5Title">Start Anki and VOICEVOX</h3>
-            <p data-i18n="helpStep5Body">Every time you add cards with audio, keep both desktop Anki and VOICEVOX running. Then press Check connection. A green check means both are ready.</p>
+            <h3 data-i18n="helpStep5Title">Start Anki and the speech engine</h3>
+            <p data-i18n="helpStep5Body">When adding cards with audio, keep both desktop Anki and the configured speech engine running. A green check means both are ready.</p>
           </div>
         </div>
 
@@ -378,7 +392,7 @@
           <div class="step-number">7</div>
           <div>
             <h3 data-i18n="helpStep7Title">Ask GPT for card JSON</h3>
-            <p data-i18n="helpStep7Body">Ask GPT to return only one card as valid JSON. reading and exampleReadings should contain full hiragana pronunciations so VOICEVOX does not misread kanji.</p>
+            <p data-i18n="helpStep7Body">Ask GPT to return only one card as valid JSON. reading and exampleReadings should contain full hiragana pronunciations so the speech engine does not misread kanji.</p>
             <div class="help-actions">
               <button id="copyPromptBtn" class="btn btn-secondary" type="button" data-i18n="copyPrompt">Copy GPT prompt</button>
             </div>

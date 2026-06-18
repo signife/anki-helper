@@ -1,4 +1,4 @@
-import { MODEL_NAME, CARD_FONT_STACKS } from "./config.js";
+import { MODEL_NAME, CARD_FONT_STACKS, SPEECH_ENGINE } from "./config.js";
 import { translations } from "./translations.js";
 import { SAMPLE_CARDS } from "./samples.js";
 import { buildCardTemplates, buildCardCss } from "./templates.js";
@@ -18,13 +18,13 @@ const elements = {
   corsCode: $("#corsCode"),
   ankiUrl: $("#ankiUrl"),
   deckName: $("#deckName"),
-  voicevoxUrl: $("#voicevoxUrl"),
-  voicevoxSpeaker: $("#voicevoxSpeaker"),
-  voicevoxSpeed: $("#voicevoxSpeed"),
+  speechEngineUrl: $("#speechEngineUrl"),
+  speechEngineSpeaker: $("#speechEngineSpeaker"),
+  speechEngineSpeed: $("#speechEngineSpeed"),
   generateWordAudio: $("#generateWordAudio"),
   generateExampleAudio: $("#generateExampleAudio"),
-  voicevoxStatus: $("#voicevoxStatus"),
-  voicevoxStatusText: $("#voicevoxStatusText"),
+  speechEngineStatus: $("#speechEngineStatus"),
+  speechEngineStatusText: $("#speechEngineStatusText"),
   saveSettingsBtn: $("#saveSettingsBtn"),
   cardMode: $("#cardMode"),
   cardFont: $("#cardFont"),
@@ -63,8 +63,8 @@ const elements = {
   operationCloseBtn: $("#operationCloseBtn"),
   openAnkiConnectBtn: $("#openAnkiConnectBtn"),
   copyAnkiConnectCodeBtn: $("#copyAnkiConnectCodeBtn"),
-  openVoicevoxBtn: $("#openVoicevoxBtn"),
-  openVoicevoxSettingBtn: $("#openVoicevoxSettingBtn"),
+  openSpeechEngineBtn: $("#openSpeechEngineBtn"),
+  openSpeechEngineSettingBtn: $("#openSpeechEngineSettingBtn"),
   copyOriginBtn: $("#copyOriginBtn"),
   copyPromptBtn: $("#copyPromptBtn")
 };
@@ -420,9 +420,9 @@ function saveSettings(showMessage = false) {
   const settings = {
     ankiUrl: elements.ankiUrl.value.trim(),
     deckName: elements.deckName.value.trim(),
-    voicevoxUrl: elements.voicevoxUrl.value.trim(),
-    voicevoxSpeaker: elements.voicevoxSpeaker.value,
-    voicevoxSpeed: elements.voicevoxSpeed.value,
+    speechEngineUrl: elements.speechEngineUrl.value.trim(),
+    speechEngineSpeaker: elements.speechEngineSpeaker.value,
+    speechEngineSpeed: elements.speechEngineSpeed.value,
     generateWordAudio: elements.generateWordAudio.checked,
     generateExampleAudio: elements.generateExampleAudio.checked,
     cardMode: elements.cardMode.value,
@@ -446,9 +446,20 @@ function loadSettings() {
     const settings = JSON.parse(saved);
     if (settings.ankiUrl) elements.ankiUrl.value = settings.ankiUrl;
     if (settings.deckName) elements.deckName.value = settings.deckName;
-    if (settings.voicevoxUrl) elements.voicevoxUrl.value = settings.voicevoxUrl;
-    if (settings.voicevoxSpeaker !== undefined) elements.voicevoxSpeaker.dataset.savedValue = String(settings.voicevoxSpeaker);
-    if (settings.voicevoxSpeed) elements.voicevoxSpeed.value = settings.voicevoxSpeed;
+    const savedEngineUrl = settings.speechEngineUrl || settings.voicevoxUrl;
+    const savedSpeaker = settings.speechEngineSpeaker ?? settings.voicevoxSpeaker;
+    const savedSpeed = settings.speechEngineSpeed || settings.voicevoxSpeed;
+
+    if (savedEngineUrl) {
+      elements.speechEngineUrl.value =
+        savedEngineUrl.includes(":50021")
+          ? SPEECH_ENGINE.defaultUrl
+          : savedEngineUrl;
+    }
+    if (savedSpeaker !== undefined) {
+      elements.speechEngineSpeaker.dataset.savedValue = String(savedSpeaker);
+    }
+    if (savedSpeed) elements.speechEngineSpeed.value = savedSpeed;
     if (settings.generateWordAudio !== undefined) elements.generateWordAudio.checked = Boolean(settings.generateWordAudio);
     if (settings.generateExampleAudio !== undefined) elements.generateExampleAudio.checked = Boolean(settings.generateExampleAudio);
     if (settings.cardMode) elements.cardMode.value = settings.cardMode;
@@ -546,89 +557,89 @@ function normalizeBaseUrl(value) {
   return String(value || "").trim().replace(/\/+$/, "");
 }
 
-function setVoicevoxStatus(message, type = "") {
-  elements.voicevoxStatusText.textContent = message;
-  elements.voicevoxStatus.className = `voicevox-status ${type}`.trim();
+function setSpeechEngineStatus(message, type = "") {
+  elements.speechEngineStatusText.textContent = message;
+  elements.speechEngineStatus.className = `voicevox-status ${type}`.trim();
 }
 
-async function voicevoxRequest(path, options = {}) {
-  const baseUrl = normalizeBaseUrl(elements.voicevoxUrl.value) || "http://127.0.0.1:50021";
+async function speechEngineRequest(path, options = {}) {
+  const baseUrl = normalizeBaseUrl(elements.speechEngineUrl.value) || SPEECH_ENGINE.defaultUrl;
   const response = await fetch(`${baseUrl}${path}`, options);
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(`VOICEVOX HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+    throw new Error(`${SPEECH_ENGINE.name} HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
   }
 
   return response;
 }
 
-async function loadVoicevoxSpeakers({ quiet = false } = {}) {
-  if (!quiet) setVoicevoxStatus("VOICEVOX를 자동으로 확인하는 중입니다…");
+async function loadSpeechEngineSpeakers({ quiet = false } = {}) {
+  if (!quiet) setSpeechEngineStatus(`${SPEECH_ENGINE.name}를 자동으로 확인하는 중입니다…`);
 
   try {
     const [versionResponse, speakersResponse] = await Promise.all([
-      voicevoxRequest("/version"),
-      voicevoxRequest("/speakers")
+      speechEngineRequest("/version"),
+      speechEngineRequest("/speakers")
     ]);
 
     const version = await versionResponse.json();
     const speakers = await speakersResponse.json();
     const savedValue =
-      elements.voicevoxSpeaker.value ||
-      elements.voicevoxSpeaker.dataset.savedValue ||
+      elements.speechEngineSpeaker.value ||
+      elements.speechEngineSpeaker.dataset.savedValue ||
       "";
 
-    elements.voicevoxSpeaker.innerHTML = "";
+    elements.speechEngineSpeaker.innerHTML = "";
 
     for (const speaker of speakers) {
       for (const style of speaker.styles || []) {
         const option = document.createElement("option");
         option.value = String(style.id);
         option.textContent = `${speaker.name} — ${style.name}`;
-        elements.voicevoxSpeaker.appendChild(option);
+        elements.speechEngineSpeaker.appendChild(option);
       }
     }
 
     if (
       savedValue &&
-      [...elements.voicevoxSpeaker.options].some(option => option.value === String(savedValue))
+      [...elements.speechEngineSpeaker.options].some(option => option.value === String(savedValue))
     ) {
-      elements.voicevoxSpeaker.value = String(savedValue);
+      elements.speechEngineSpeaker.value = String(savedValue);
     }
 
-    delete elements.voicevoxSpeaker.dataset.savedValue;
-    setVoicevoxStatus(`VOICEVOX 사용 가능 · v${version}`, "success");
+    delete elements.speechEngineSpeaker.dataset.savedValue;
+    setSpeechEngineStatus(`${SPEECH_ENGINE.name} 사용 가능 · v${version}`, "success");
     saveSettings(false);
     return true;
   } catch (error) {
-    setVoicevoxStatus("VOICEVOX가 꺼져 있습니다. 음성 생성 시 실행해주세요.", "error");
+    setSpeechEngineStatus(`${SPEECH_ENGINE.name}가 꺼져 있습니다. 음성 생성 시 실행해주세요.`, "error");
     if (!quiet) console.warn(error);
     return false;
   }
 }
 
-async function synthesizeVoicevox(text) {
+async function synthesizeSpeech(text) {
   const cleanText = String(text || "").trim();
-  if (!cleanText) throw new Error("VOICEVOX로 읽을 텍스트가 비어 있습니다.");
+  if (!cleanText) throw new Error(`${SPEECH_ENGINE.name}로 읽을 텍스트가 비어 있습니다.`);
 
-  const speaker = Number(elements.voicevoxSpeaker.value);
+  const speaker = Number(elements.speechEngineSpeaker.value);
   if (!Number.isInteger(speaker)) {
-    const connected = await loadVoicevoxSpeakers();
-    if (!connected || !elements.voicevoxSpeaker.value) {
-      throw new Error("VOICEVOX를 실행한 뒤 다시 시도하세요.");
+    const connected = await loadSpeechEngineSpeakers();
+    if (!connected || !elements.speechEngineSpeaker.value) {
+      throw new Error(`${SPEECH_ENGINE.name}를 실행한 뒤 다시 시도하세요.`);
     }
   }
 
-  const selectedSpeaker = Number(elements.voicevoxSpeaker.value);
-  const queryResponse = await voicevoxRequest(
+  const selectedSpeaker = Number(elements.speechEngineSpeaker.value);
+  const queryResponse = await speechEngineRequest(
     `/audio_query?text=${encodeURIComponent(cleanText)}&speaker=${selectedSpeaker}`,
     { method: "POST" }
   );
   const query = await queryResponse.json();
-  query.speedScale = Number(elements.voicevoxSpeed.value) || 1;
+  query.speedScale = Number(elements.speechEngineSpeed.value) || 1;
 
-  const synthesisResponse = await voicevoxRequest(
+  const synthesisResponse = await speechEngineRequest(
     `/synthesis?speaker=${selectedSpeaker}`,
     {
       method: "POST",
@@ -656,9 +667,9 @@ async function blobToBase64(blob) {
 function makeAudioSource(text) {
   return JSON.stringify({
     text: String(text || "").trim(),
-    speaker: Number(elements.voicevoxSpeaker.value),
-    speed: Number(elements.voicevoxSpeed.value) || 1,
-    engine: "VOICEVOX"
+    speaker: Number(elements.speechEngineSpeaker.value),
+    speed: Number(elements.speechEngineSpeed.value) || 1,
+    engine: SPEECH_ENGINE.sourceName
   });
 }
 
@@ -671,7 +682,7 @@ function createUniqueAudioFilename(kind) {
 }
 
 async function synthesizeAndStore(text, kind) {
-  const audioBlob = await synthesizeVoicevox(text);
+  const audioBlob = await synthesizeSpeech(text);
   const data = await blobToBase64(audioBlob);
   const filename = createUniqueAudioFilename(kind);
   const storedFilename = await invoke("storeMediaFile", { filename, data });
@@ -688,7 +699,7 @@ async function createAudioFields(card, progressPrefix = "") {
 
   if (elements.generateWordAudio.checked) {
     const wordVoiceText = String(card.voiceText || card.reading || card.word).trim();
-    updateOperationProgress(`${progressPrefix}VOICEVOX 단어 음성 생성 중… ${card.word} (${wordVoiceText})`);
+    updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} 단어 음성 생성 중… ${card.word} (${wordVoiceText})`);
     fields.WordAudio = await synthesizeAndStore(wordVoiceText, "word");
     fields.WordAudioSource = makeAudioSource(wordVoiceText);
   }
@@ -706,7 +717,7 @@ async function createAudioFields(card, progressPrefix = "") {
           : example
       ).trim();
 
-      updateOperationProgress(`${progressPrefix}VOICEVOX 예문 음성 생성 중… ${index + 1}/${card.examples.length}`);
+      updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} 예문 음성 생성 중… ${index + 1}/${card.examples.length}`);
       audioTags.push(await synthesizeAndStore(exampleVoiceText, `example_${index + 1}`));
     }
 
@@ -717,7 +728,7 @@ async function createAudioFields(card, progressPrefix = "") {
   return fields;
 }
 
-async function ensureVoicevoxFieldsAndTemplates(modelName, fontStack) {
+async function ensureSpeechEngineFieldsAndTemplates(modelName, fontStack) {
   const requiredFields = [
     "CardMode",
     "Word",
@@ -774,14 +785,14 @@ async function testConnection() {
 
   try {
     const version = await invoke("version");
-    const voicevoxReady = await loadVoicevoxSpeakers({ quiet: true });
+    const speechEngineReady = await loadSpeechEngineSpeakers({ quiet: true });
 
-    if (!voicevoxReady) {
-      throw new Error("VOICEVOX 연결 실패: 실행 상태와 CORS Allow Origin 설정을 확인하세요.");
+    if (!speechEngineReady) {
+      throw new Error(`${SPEECH_ENGINE.name} 연결 실패: 실행 상태와 CORS Allow Origin 설정을 확인하세요.`);
     }
 
     setConnectionState("connected");
-    setStatus(`${t("connectionSuccess")} · AnkiConnect v${version} · VOICEVOX ready`, "success");
+    setStatus(`${t("connectionSuccess")} · AnkiConnect v${version} · ${SPEECH_ENGINE.name} ready`, "success");
   } catch (error) {
     setConnectionState("error");
     setStatus(`${t("connectionFailed")}
@@ -817,7 +828,7 @@ async function createRecommendedSetup() {
     const models = await invoke("modelNames");
 
     if (models.includes(modelName)) {
-      await ensureVoicevoxFieldsAndTemplates(modelName, fontStack);
+      await ensureSpeechEngineFieldsAndTemplates(modelName, fontStack);
       lines.push(`${t("setupModelExists")}: ${modelName} · templates and CSS updated`);
     } else {
       await invoke("createModel", {
@@ -921,13 +932,13 @@ async function addToAnki() {
   const failures = [];
 
   try {
-    updateOperationProgress("Anki와 VOICEVOX 연결을 확인하는 중…");
+    updateOperationProgress(`${SPEECH_ENGINE.name}와 Anki 연결을 확인하는 중…`);
     await invoke("version");
 
     if (elements.generateWordAudio.checked || elements.generateExampleAudio.checked) {
-      const voicevoxReady = await loadVoicevoxSpeakers({ quiet: true });
-      if (!voicevoxReady) {
-        throw new Error("VOICEVOX 연결 실패: 실행 상태와 CORS Allow Origin 설정을 확인하세요.");
+      const speechEngineReady = await loadSpeechEngineSpeakers({ quiet: true });
+      if (!speechEngineReady) {
+        throw new Error(`${SPEECH_ENGINE.name} 연결 실패: 실행 상태와 CORS Allow Origin 설정을 확인하세요.`);
       }
     }
 
@@ -972,13 +983,13 @@ async function addToAnki() {
   }
 }
 
-elements.voicevoxUrl.addEventListener("change", async () => {
+elements.speechEngineUrl.addEventListener("change", async () => {
   saveSettings(false);
-  await loadVoicevoxSpeakers();
+  await loadSpeechEngineSpeakers();
 });
 
-elements.voicevoxSpeaker.addEventListener("change", () => saveSettings(false));
-elements.voicevoxSpeed.addEventListener("change", () => saveSettings(false));
+elements.speechEngineSpeaker.addEventListener("change", () => saveSettings(false));
+elements.speechEngineSpeed.addEventListener("change", () => saveSettings(false));
 elements.generateWordAudio.addEventListener("change", () => saveSettings(false));
 elements.generateExampleAudio.addEventListener("change", () => saveSettings(false));
 
@@ -1017,12 +1028,12 @@ elements.copyAnkiConnectCodeBtn.addEventListener("click", async () => {
   }, 1400);
 });
 
-elements.openVoicevoxBtn.addEventListener("click", () => {
-  window.open("https://voicevox.hiroshiba.jp/", "_blank", "noopener");
+elements.openSpeechEngineBtn.addEventListener("click", () => {
+  window.open(SPEECH_ENGINE.websiteUrl, "_blank", "noopener");
 });
 
-elements.openVoicevoxSettingBtn.addEventListener("click", () => {
-  window.open("http://127.0.0.1:50021/setting", "_blank", "noopener");
+elements.openSpeechEngineSettingBtn.addEventListener("click", () => {
+  window.open(SPEECH_ENGINE.settingsUrl, "_blank", "noopener");
 });
 
 elements.copyOriginBtn.addEventListener("click", async () => {
@@ -1190,7 +1201,12 @@ elements.jsonInput.addEventListener("input", () => {
 });
 
 loadSettings();
+
+if (!elements.speechEngineUrl.value.trim()) {
+  elements.speechEngineUrl.value = SPEECH_ENGINE.defaultUrl;
+}
+
 applyTheme(localStorage.getItem("anki-helper-theme") || "dark");
 applyLanguage(localStorage.getItem("anki-helper-language") || "en");
 updateModeDetails();
-  loadVoicevoxSpeakers({ quiet: true });
+loadSpeechEngineSpeakers({ quiet: true });

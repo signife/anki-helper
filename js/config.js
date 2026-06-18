@@ -13,3 +13,12 @@ export const CARD_FONT_STACKS = {
   "arial": 'Arial, Helvetica, sans-serif',
   "times-new-roman": '"Times New Roman", Times, serif'
 };
+
+export const SPEECH_ENGINE = {
+  id: "aivis-speech",
+  name: "AivisSpeech",
+  defaultUrl: "http://127.0.0.1:10101",
+  websiteUrl: "https://aivis-project.com/",
+  settingsUrl: "http://127.0.0.1:10101/docs",
+  sourceName: "AivisSpeech"
+};
