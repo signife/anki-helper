@@ -19,6 +19,6 @@ export const SPEECH_ENGINE = {
   name: "AivisSpeech",
   defaultUrl: "http://127.0.0.1:10101",
   websiteUrl: "https://aivis-project.com/",
-  settingsUrl: "http://127.0.0.1:10101/docs",
+  settingsUrl: "http://127.0.0.1:10101/setting",
   sourceName: "AivisSpeech"
 };
