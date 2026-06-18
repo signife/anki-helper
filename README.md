@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://signife.github.io/ankicards/">
+  <a href="https://signife.github.io/anki-helper/">
     <img
       src="https://img.shields.io/badge/Open%20Web%20App-Anki%20Vocabulary%20Helper-2EA44F?style=for-the-badge"
       alt="Open Anki Vocabulary Helper"
@@ -154,7 +154,7 @@ http://127.0.0.1:10101
 API documentation:
 
 ```text
-http://127.0.0.1:10101/docs
+http://127.0.0.1:10101/setting
 ```
 
 When browser access is blocked, allow the following origin in AivisSpeech:
@@ -405,7 +405,7 @@ export const SPEECH_ENGINE = {
   name: "AivisSpeech",
   defaultUrl: "http://127.0.0.1:10101",
   websiteUrl: "https://aivis-project.com/",
-  settingsUrl: "http://127.0.0.1:10101/docs",
+  settingsUrl: "http://127.0.0.1:10101/setting",
   sourceName: "AivisSpeech"
 };
 ```
@@ -445,7 +445,7 @@ Check:
 
 - AivisSpeech is running
 - The URL is `http://127.0.0.1:10101`
-- `http://127.0.0.1:10101/docs` opens
+- `http://127.0.0.1:10101/setting` opens
 - The site origin is allowed
 - AivisSpeech was restarted after the configuration change
 
