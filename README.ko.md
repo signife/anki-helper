@@ -1,13 +1,13 @@
 # Anki Vocabulary Helper
 
 <p align="center">
-  <a href="./README.md">English</a> ·
+  <strong>English</strong> ·
   <a href="./README.ja.md">日本語</a> ·
-  <strong>한국어</strong>
+  <a href="./README.ko.md">한국어</a>
 </p>
 
 <p align="center">
-  <a href="https://signife.github.io/anki-helper/">
+  <a href="https://signife.github.io/ankicards/">
     <img
       src="https://img.shields.io/badge/Open%20Web%20App-Anki%20Vocabulary%20Helper-2EA44F?style=for-the-badge"
       alt="Open Anki Vocabulary Helper"
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  일본어 단어 카드를 Anki로 전송하고 AivisSpeech로 단어와 예문 음성을 생성하는 정적 웹 도구입니다.
+  A static web tool that sends Japanese vocabulary cards to Anki, displays ruby furigana, and generates word and example audio with AivisSpeech.
 </p>
 
 <p align="center">
@@ -35,38 +35,38 @@
   </a>
 </p>
 
-## 기능
 
-- ChatGPT가 생성한 카드 JSON을 AnkiConnect를 통해 Anki에 직접 추가
-- 한 장 또는 여러 장의 카드를 한 번에 처리
-- JSON 배열, 여러 JSON 객체, JSON/TXT 파일 불러오기
-- 로컬 AivisSpeech API로 단어와 예문 음성 생성
-- 고유한 WAV 파일명으로 음성을 Anki 미디어에 저장
-- 일본어 → 일본어, 일본어 → 모국어 카드 모드 지원
-- 영어, 일본어, 한국어, 중국어 웹 UI
-- Anki 노트 타입, 필드, 템플릿, CSS 자동 생성 및 갱신
-- 뒷면 한자를 클릭하면 한자 정보 팝업 표시
-- 앞면을 길게 누르면 읽기와 숨겨진 한자 정보 표시
-- 데스크톱과 모바일에 대응하는 반응형 카드 레이아웃
-- 실제 `templates.js`를 로컬에서 미리보기
+## Features
 
-## 요구사항
+- Add ChatGPT-generated card JSON directly to Anki through AnkiConnect
+- Process one card or multiple cards at once
+- Import JSON arrays, multiple JSON objects, and JSON/TXT files
+- Generate word and example audio with the local AivisSpeech API
+- Display ruby furigana in common expressions and example sentences
+- Toggle furigana on and off on the back of the card
+- Store audio in Anki media with unique WAV filenames
+- Support Japanese → Japanese and Japanese → native-language card modes
+- English, Japanese, Korean, and Chinese web UI
+- Automatically create and update the Anki note type, fields, templates, and CSS
+- Show a kanji information popup when a kanji is clicked on the back
+- Reveal reading and hidden kanji information by holding the front
+- Responsive card layout for desktop and mobile
 
-웹페이지 자체를 설치할 필요는 없습니다. 배포된 웹 앱을 열어 사용하세요.
+## Requirements
 
-**https://signife.github.io/anki-helper/**
+The web page itself does not need to be installed. Open the deployed GitHub Pages site in a browser.
 
-로컬 환경에 필요한 프로그램:
+Required local applications:
 
 1. **[Anki Desktop](https://apps.ankiweb.net/)**
 2. **[AnkiConnect add-on](https://ankiweb.net/shared/info/2055492159)**
-   - 애드온 코드: `2055492159`
+   - Add-on code: `2055492159`
 3. **[AivisSpeech](https://github.com/Aivis-Project/AivisSpeech)**
-4. 최신 버전의 Chrome 또는 Edge
+4. A recent version of Chrome or Edge
 
-일반 사용 시 백엔드 서버, Node.js, npm, Python을 설치할 필요가 없습니다.
+No backend server, Node.js, npm, or Python installation is required for normal use.
 
-## 프로젝트 구조
+## Project Structure
 
 ```text
 anki-helper-modular/
@@ -84,44 +84,40 @@ anki-helper-modular/
 │  └─ translations.js
 ├─ docs/
 │  └─ images/
-└─    └─ anki-card-preview.png
+│     └─ anki-card-preview.png
 ```
 
-## 사용자 설정
+## User Setup
 
-웹 앱을 엽니다.
+### 1. Install Anki
 
-**[https://signife.github.io/anki-helper/](https://signife.github.io/anki-helper/)**
+Install and start Anki Desktop.
 
-### 1. Anki 설치
+### 2. Install AnkiConnect
 
-Anki Desktop을 설치하고 실행합니다.
-
-### 2. AnkiConnect 설치
-
-Anki에서 다음 순서로 진행합니다.
+In Anki:
 
 ```text
-도구
-→ 부가 기능
-→ 부가 기능 가져오기
-→ 코드: 2055492159
+Tools
+→ Add-ons
+→ Get Add-ons
+→ Code: 2055492159
 ```
 
-설치 후 Anki를 재시작합니다.
+Restart Anki after installation.
 
-### 3. AnkiConnect CORS 설정
+### 3. Configure AnkiConnect CORS
 
-다음 화면을 엽니다.
+Open:
 
 ```text
-도구
-→ 부가 기능
+Tools
+→ Add-ons
 → AnkiConnect
-→ 설정
+→ Config
 ```
 
-GitHub Pages Origin을 `webCorsOriginList`에 추가합니다.
+Add your GitHub Pages origin to `webCorsOriginList`.
 
 ```json
 {
@@ -131,7 +127,7 @@ GitHub Pages Origin을 `webCorsOriginList`에 추가합니다.
 }
 ```
 
-로컬 개발도 함께 하는 경우 다음 Origin도 허용할 수 있습니다.
+For local development, you may also allow:
 
 ```json
 {
@@ -143,38 +139,38 @@ GitHub Pages Origin을 `webCorsOriginList`에 추가합니다.
 }
 ```
 
-설정을 저장하고 Anki를 재시작합니다.
+Save the configuration and restart Anki.
 
-### 4. AivisSpeech 설치 및 실행
+### 4. Install and Start AivisSpeech
 
-AivisSpeech를 설치하고 실행합니다.
+Install and start AivisSpeech.
 
-기본 로컬 API URL:
+Default local API URL:
 
 ```text
 http://127.0.0.1:10101
 ```
 
-API 문서:
+API documentation:
 
 ```text
-http://127.0.0.1:10101/setting
+http://127.0.0.1:10101/docs
 ```
 
-브라우저 접근이 차단되는 경우 AivisSpeech에서 다음 Origin을 허용합니다.
+When browser access is blocked, allow the following origin in AivisSpeech:
 
 ```text
 https://signife.github.io
 ```
 
-설정을 변경한 후 AivisSpeech를 재시작합니다.
+Restart AivisSpeech after changing its settings.
 
-## 연결 확인
+## Connection Check
 
-1. Anki를 실행합니다.
-2. AivisSpeech를 실행합니다.
-3. 배포된 웹페이지를 엽니다.
-4. 다음 값을 확인합니다.
+1. Start Anki.
+2. Start AivisSpeech.
+3. Open the deployed web page.
+4. Confirm these values:
 
 ```text
 AnkiConnect URL
@@ -186,61 +182,61 @@ Speech engine URL
 http://127.0.0.1:10101
 ```
 
-5. **연결 테스트**를 클릭합니다.
-6. 초록색 체크가 표시되면 두 서비스 모두 사용할 준비가 된 상태입니다.
+5. Click **Test connection**.
+6. A green check means both services are ready.
 
-## Anki 최초 설정
+## Initial Anki Setup
 
-다음 항목을 선택합니다.
+Choose:
 
-- 덱 이름
-- 카드 모드
-- 카드 글꼴
-- AivisSpeech 보이스
-- 말하기 속도
-- 단어 음성 생성 여부
-- 예문 음성 생성 여부
+- Deck name
+- Card mode
+- Card font
+- AivisSpeech voice
+- Speech speed
+- Whether to generate word audio
+- Whether to generate example audio
 
-그다음 **추천 Anki 설정 만들기**를 클릭합니다.
+Then click **Create recommended Anki setup**.
 
-노트 타입이 이미 존재하면 앱이 다음 항목을 갱신합니다.
+If the note type already exists, the app updates:
 
-- 앞면 템플릿
-- 뒷면 템플릿
-- 카드 CSS
-- 누락된 필드
+- Front template
+- Back template
+- Card CSS
+- Missing fields
 
-## Anki 노트 타입
+## Anki Note Type
 
-기본 노트 타입:
+Default note type:
 
 ```text
 signife_anki_helper
 ```
 
-13개 필드를 사용합니다.
+It uses 13 fields:
 
-| Field | 설명 |
+| Field | Description |
 |---|---|
-| `CardMode` | `jp-jp` 또는 `jp-native` |
-| `Word` | 일본어 표제어 |
-| `Reading` | 전체 히라가나 읽기 |
-| `Definition` | 일본어 정의 |
-| `NativeMeaning` | 사용자 언어로 된 뜻 |
-| `Expressions` | 자주 쓰는 표현 |
-| `Examples` | 예문 |
-| `Synonyms` | 유의어 |
-| `KanjiData` | 한자별 정보를 담는 JSON |
-| `WordAudio` | 단어 음성 태그 |
-| `ExamplesAudio` | 예문 음성 태그 |
-| `WordAudioSource` | 단어 음성 생성 메타데이터 |
-| `ExamplesAudioSource` | 예문 음성 생성 메타데이터 |
+| `CardMode` | `jp-jp` or `jp-native` |
+| `Word` | Japanese headword |
+| `Reading` | Full hiragana reading |
+| `Definition` | Japanese definition |
+| `NativeMeaning` | Meaning in the user's language |
+| `Expressions` | Common expressions, with optional HTML ruby furigana |
+| `Examples` | Example sentences, with optional HTML ruby furigana |
+| `Synonyms` | Synonyms |
+| `KanjiData` | Per-kanji information as JSON |
+| `WordAudio` | Word audio tag |
+| `ExamplesAudio` | Example audio tags |
+| `WordAudioSource` | Word audio generation metadata |
+| `ExamplesAudioSource` | Example audio generation metadata |
 
-## 카드 모드
+## Card Modes
 
 ### `jp-jp`
 
-뒷면에 일본어 정의를 표시합니다.
+Shows the Japanese definition on the back.
 
 ```json
 {
@@ -250,7 +246,7 @@ signife_anki_helper
 
 ### `jp-native`
 
-뒷면에 모국어 뜻을 표시합니다.
+Shows the native-language meaning on the back.
 
 ```json
 {
@@ -258,7 +254,9 @@ signife_anki_helper
 }
 ```
 
-## 카드 JSON 예시
+## Card JSON Example
+
+Expressions and examples may contain safe HTML ruby tags. Do not use Markdown inside JSON string values.
 
 ```json
 {
@@ -268,14 +266,14 @@ signife_anki_helper
   "definition": "正しい道理。また、社会を公平に保つための正しい考え方。",
   "nativeMeaning": "justice; righteousness",
   "expressions": [
-    "正義を貫く",
-    "正義を守る",
-    "正義に反する",
-    "正義の味方"
+    "<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>を<ruby><rb>貫</rb><rt>つらぬ</rt></ruby>",
+    "<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>を<ruby><rb>守</rb><rt>まも</rt></ruby>る",
+    "<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>に<ruby><rb>反</rb><rt>はん</rt></ruby>する",
+    "<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>の<ruby><rb>味方</rb><rt>みかた</rt></ruby>"
   ],
   "examples": [
-    "彼は最後まで自分の正義を貫いた。",
-    "それは正義に反する行為だ。"
+    "<ruby><rb>彼</rb><rt>かれ</rt></ruby>は<ruby><rb>最後</rb><rt>さいご</rt></ruby>まで<ruby><rb>自分</rb><rt>じぶん</rt></ruby>の<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>を<ruby><rb>貫</rb><rt>つらぬ</rt></ruby>いた。",
+    "それは<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>に<ruby><rb>反</rb><rt>はん</rt></ruby>する<ruby><rb>行為</rb><rt>こうい</rt></ruby>だ。"
   ],
   "exampleReadings": [
     "かれはさいごまでじぶんのせいぎをつらぬいた。",
@@ -293,74 +291,113 @@ signife_anki_helper
 }
 ```
 
-## GPT 프롬프트 예시
+## GPT Prompt Example
+
+The copy prompt is written in English so it behaves consistently across the English, Japanese, Korean, and Chinese UI.
 
 ```text
-다음 일본어 단어로 signife_anki_helper용 카드 JSON 객체 한 개를 만들어 주세요.
-JSON 이외의 설명이나 코드 블록은 출력하지 마세요.
+Create one valid JSON object for the signife_anki_helper Anki note type from the following Japanese word or grammar expression.
 
-필드:
-cardMode, word, reading, definition, nativeMeaning,
-expressions, examples, exampleReadings, synonyms, kanji.
+Output JSON only.
+Do not include explanations, markdown, or code fences.
 
-reading에는 표제어 전체의 정확한 히라가나 읽기를 작성하세요.
-exampleReadings에는 examples와 같은 순서로 각 문장의 전체 히라가나 읽기를 작성하세요.
-kanji에는 표제어에 포함된 각 한자의 읽기와 의미를 객체로 작성하세요.
-cardMode는 jp-native로 설정하세요.
+Required fields:
+cardMode, word, reading, definition, nativeMeaning, expressions, examples, exampleReadings, synonyms, kanji.
+
+Rules:
+1. cardMode must be "jp-native".
+2. word must contain the target Japanese word or grammar expression.
+3. reading must contain the full hiragana reading of the target word or expression.
+4. definition must be a natural Japanese dictionary-style definition.
+5. nativeMeaning must be a natural meaning in the user's native language.
+6. expressions must contain 3 to 5 common collocations or fixed expressions.
+7. examples must contain 2 natural Japanese example sentences.
+8. exampleReadings must contain the full hiragana readings of examples, in the same order.
+9. synonyms must contain 2 to 4 synonyms or similar expressions.
+10. kanji must be an object. For each kanji in the target word, include its onyomi, kunyomi, and meaning.
+11. If there is no information for a field, use [] or {}, not null.
+12. The JSON must be valid. Do not add trailing commas.
+
+Ruby rules for expressions and examples:
+- In expressions and examples, add furigana to kanji by using HTML ruby tags.
+- Use this exact format:
+  <ruby><rb>漢字</rb><rt>かんじ</rt></ruby>
+- Do not add ruby tags to hiragana, katakana, particles, or punctuation.
+- Do not use Markdown.
+- Do not use bullet syntax inside JSON string values.
+- Keep the sentence natural and readable.
+
+Example of ruby format:
+<ruby><rb>彼</rb><rt>かれ</rt></ruby>は<ruby><rb>最後</rb><rt>さいご</rt></ruby>まで<ruby><rb>自分</rb><rt>じぶん</rt></ruby>の<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>を<ruby><rb>貫</rb><rt>つらぬ</rt></ruby>いた。
+
+Output format:
+{
+  "cardMode": "jp-native",
+  "word": "",
+  "reading": "",
+  "definition": "",
+  "nativeMeaning": "",
+  "expressions": [],
+  "examples": [],
+  "exampleReadings": [],
+  "synonyms": [],
+  "kanji": {}
+}
 ```
 
-## 음성 생성 흐름
+## Audio Generation Flow
 
 ```text
-JSON 입력
-→ reading 또는 voiceText 선택
+JSON input
+→ choose reading or voiceText
 → AivisSpeech /audio_query
-→ speedScale 적용
+→ apply speedScale
 → AivisSpeech /synthesis
-→ WAV Blob 생성
-→ 고유 파일명 생성
+→ create WAV Blob
+→ generate unique filename
 → AnkiConnect storeMediaFile
-→ [sound:filename.wav]를 필드에 저장
+→ save [sound:filename.wav] in the field
 ```
 
-파일명 예시:
+Example filenames:
 
 ```text
 signife_word_1781741234567_a8d42f6b911c.wav
 signife_example_1_1781741238912_f1920ed34b7a.wav
 ```
 
-카드 템플릿은 파일명을 추측하지 않고 다음 필드만 출력합니다.
+The card template does not guess filenames. It only renders:
 
 ```html
 {{WordAudio}}
 {{ExamplesAudio}}
 ```
 
-## 카드 디자인
+## Card Design
 
-### 앞면
+### Front
 
-- 표제어
-- 카드를 길게 눌렀을 때 표시되는 읽기
-- 단어 음성 버튼
-- 앞면과 뒷면에서 통일된 글꼴과 단어 크기
+- Headword
+- Reading revealed by holding the card
+- Word audio button
+- Matching font and word size on front and back
 
-### 뒷면
+### Back
 
-- 표제어와 읽기
-- 클릭 가능한 한자별 팝업
-- 단어 음성
-- 일본어 정의 또는 모국어 뜻
-- 스크롤 가능한 회색 상세 영역
-  - 예문
-  - 예문 음성
-  - 자주 쓰는 표현
-  - 유의어
+- Headword and reading
+- Clickable per-kanji popup
+- Word audio
+- Japanese definition or native meaning
+- Furigana toggle for expressions and examples
+- Scrollable gray detail area
+  - Examples with optional ruby furigana
+  - Example audio
+  - Common expressions with optional ruby furigana
+  - Synonyms
 
-카드 글꼴은 `config.js`에서 선택되며 `buildCardCss(fontStack)`으로 전달됩니다.
+The card font is selected in `config.js` and passed to `buildCardCss(fontStack)`. Font stacks use installed system fonts; bundled fonts are not required for normal desktop use.
 
-## AivisSpeech 설정
+## AivisSpeech Configuration
 
 ```js
 export const SPEECH_ENGINE = {
@@ -373,9 +410,9 @@ export const SPEECH_ENGINE = {
 };
 ```
 
-## 개발자용 설정
+## Developer Setup
 
-일반 사용자에게는 이 섹션이 필요하지 않습니다.
+Normal users do not need this section.
 
 ```bash
 git clone <YOUR_REPOSITORY_URL>
@@ -383,57 +420,62 @@ cd anki-helper-modular
 python -m http.server 8000
 ```
 
-다음 URL을 엽니다.
+Open:
 
 ```text
 http://localhost:8000
 ```
 
-실제 카드 템플릿을 미리보려면 다음 URL을 엽니다.
 
-```text
-http://localhost:8000/templates_local_preview.html
-```
+## Troubleshooting
 
-## 문제 해결
+### AnkiConnect Connection Failed
 
-### AnkiConnect 연결 실패
+Check:
 
-다음 항목을 확인하세요.
+- Anki is running
+- AnkiConnect is installed
+- The URL is `http://localhost:8765`
+- Your site origin is included in `webCorsOriginList`
+- Anki was restarted after the configuration change
 
-- Anki가 실행 중인지
-- AnkiConnect가 설치되어 있는지
-- URL이 `http://localhost:8765`인지
-- 사이트 Origin이 `webCorsOriginList`에 포함되어 있는지
-- 설정 변경 후 Anki를 재시작했는지
+### AivisSpeech Connection Failed
 
-### AivisSpeech 연결 실패
+Check:
 
-다음 항목을 확인하세요.
+- AivisSpeech is running
+- The URL is `http://127.0.0.1:10101`
+- `http://127.0.0.1:10101/docs` opens
+- The site origin is allowed
+- AivisSpeech was restarted after the configuration change
 
-- AivisSpeech가 실행 중인지
-- URL이 `http://127.0.0.1:10101`인지
-- `http://127.0.0.1:10101/docs`가 열리는지
-- 사이트 Origin이 허용되어 있는지
-- 설정 변경 후 AivisSpeech를 재시작했는지
+### Card Design Did Not Update
 
-### 카드 디자인이 갱신되지 않는 경우
+1. Edit `js/templates.js` or `js/app.js`
+2. Hard-refresh the browser
+3. Click **Create recommended Anki setup** again
+4. Check the note type templates and styling in Anki
 
-1. `js/templates.js`를 수정합니다.
-2. 브라우저를 강력 새로고침합니다.
-3. **추천 Anki 설정 만들기**를 다시 클릭합니다.
-4. Anki에서 노트 타입 템플릿을 확인합니다.
+### Ruby Furigana Does Not Appear
 
-## 개인정보
+Check:
 
-- 카드 JSON은 이 웹사이트에 저장되지 않습니다.
-- 카드 데이터는 사용자 컴퓨터의 AnkiConnect로만 전송됩니다.
-- 음성 합성은 로컬 AivisSpeech에서 처리됩니다.
-- 생성된 음성은 Anki 미디어 컬렉션에 저장됩니다.
+- `expressions` and `examples` contain HTML ruby tags, not Markdown
+- The app stores `Expressions` and `Examples` with the ruby-aware list renderer
+- The back template includes the furigana toggle script
+- You clicked **Create recommended Anki setup** again after changing templates or CSS
 
-## 라이선스
 
-프로젝트에 맞는 저장소 라이선스를 추가하세요. 예:
+## Privacy
+
+- Card JSON is not stored on this website.
+- Card data is sent only to AnkiConnect on the user's computer.
+- Audio synthesis is processed locally by AivisSpeech.
+- Generated audio is stored in the Anki media collection.
+
+## License
+
+Add the repository license that matches your project, for example:
 
 ```text
 MIT License
