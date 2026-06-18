@@ -63,22 +63,21 @@ anki-helper-modular/
 └─ templates_local_preview.html
 ```
 
-## 설치
+## 사용자 설정
 
-### 1. 저장소 내려받기
+이 웹페이지 자체는 설치할 필요가 없습니다. 배포된 GitHub Pages 주소에 접속해서 사용합니다.
 
-```bash
-git clone <YOUR_REPOSITORY_URL>
-cd anki-helper-modular
+```text
+https://signife.github.io/...
 ```
 
-GitHub Pages를 사용한다면 저장소 설정에서 Pages 배포를 활성화합니다.
+일반 사용자는 저장소 다운로드, Node.js, npm, Python 설치가 필요하지 않습니다.
 
-### 2. Anki 설치
+### 1. Anki 설치
 
 Anki Desktop을 설치하고 실행합니다.
 
-### 3. AnkiConnect 설치
+### 2. AnkiConnect 설치
 
 Anki에서 다음 순서로 설치합니다.
 
@@ -91,7 +90,7 @@ Tools
 
 설치 후 Anki를 재시작합니다.
 
-### 4. AnkiConnect CORS 설정
+### 3. AnkiConnect CORS 설정
 
 Anki에서 다음 메뉴를 엽니다.
 
@@ -102,9 +101,17 @@ Tools
 → Config
 ```
 
-`webCorsOriginList`에 사용하는 주소를 추가합니다.
+`webCorsOriginList`에 GitHub Pages 주소를 추가합니다.
 
-GitHub Pages 예시:
+```json
+{
+  "webCorsOriginList": [
+    "https://signife.github.io"
+  ]
+}
+```
+
+로컬 개발도 함께 사용하는 경우 다음 주소를 추가할 수 있습니다.
 
 ```json
 {
@@ -118,36 +125,29 @@ GitHub Pages 예시:
 
 저장 후 Anki를 재시작합니다.
 
-### 5. AivisSpeech 설치 및 실행
+### 4. AivisSpeech 설치 및 실행
 
 AivisSpeech를 설치하고 실행합니다.
 
-이 프로젝트의 기본 로컬 API 주소:
+기본 로컬 API 주소:
 
 ```text
 http://127.0.0.1:10101
 ```
 
-API가 실행 중인지 확인:
+API 실행 확인:
 
 ```text
 http://127.0.0.1:10101/docs
 ```
 
-GitHub Pages에서 AivisSpeech API 호출이 차단되는 경우 AivisSpeech 설정에서 다음 Origin을 허용합니다.
+GitHub Pages에서 API 호출이 차단되는 경우 AivisSpeech 설정에서 다음 Origin을 허용합니다.
 
 ```text
 https://signife.github.io
 ```
 
-로컬 개발 환경도 사용하는 경우:
-
-```text
-http://localhost
-http://127.0.0.1
-```
-
-설정 변경 후에는 AivisSpeech를 완전히 종료했다가 다시 실행합니다.
+설정 변경 후 AivisSpeech를 완전히 종료했다가 다시 실행합니다.
 
 ## 연결 확인
 
@@ -422,21 +422,32 @@ export const SPEECH_ENGINE = {
 
 UI와 음성 생성 코드는 `speechEngineUrl`, `speechEngineSpeaker`, `speechEngineSpeed` 같은 중립적인 이름을 사용합니다.
 
-## 로컬 실행
+## 개발자용 로컬 실행
 
-ES Modules를 사용하므로 HTML 파일을 더블클릭해서 `file://`로 열지 말고 로컬 서버를 사용합니다.
+이 섹션은 저장소를 수정하거나 `templates.js`를 직접 테스트할 때만 필요합니다.
 
-### Python
+### 저장소 내려받기
+
+```bash
+git clone <YOUR_REPOSITORY_URL>
+cd anki-helper-modular
+```
+
+### 로컬 서버 실행
+
+ES Modules를 사용하므로 HTML 파일을 `file://`로 직접 열지 말고 로컬 서버를 사용합니다.
 
 ```bash
 python -m http.server 8000
 ```
 
-브라우저:
+브라우저에서 접속:
 
 ```text
 http://localhost:8000
 ```
+
+일반 사용자는 이 과정을 진행할 필요가 없습니다.
 
 ## 카드 템플릿 로컬 미리보기
 
