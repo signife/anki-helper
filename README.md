@@ -6,13 +6,21 @@
   <a href="./README.ko.md">한국어</a>
 </p>
 
+<p align="center">
+  <a href="https://signife.github.io/ankicards/">
+    <img
+      src="https://img.shields.io/badge/Open%20Web%20App-Anki%20Vocabulary%20Helper-2EA44F?style=for-the-badge"
+      alt="Open Anki Vocabulary Helper"
+    >
+  </a>
+</p>
 
 <p align="center">
   <img src="./docs/images/anki-card-preview.png" alt="Anki vocabulary card preview" width="760">
 </p>
 
 <p align="center">
-  A static web tool that sends Japanese vocabulary cards to Anki and generates word and example audio with AivisSpeech.
+  A static web tool that sends Japanese vocabulary cards to Anki, displays ruby furigana, and generates word and example audio with AivisSpeech.
 </p>
 
 <p align="center">
@@ -34,6 +42,8 @@
 - Process one card or multiple cards at once
 - Import JSON arrays, multiple JSON objects, and JSON/TXT files
 - Generate word and example audio with the local AivisSpeech API
+- Display ruby furigana in common expressions and example sentences
+- Toggle furigana on and off on the back of the card
 - Store audio in Anki media with unique WAV filenames
 - Support Japanese → Japanese and Japanese → native-language card modes
 - English, Japanese, Korean, and Chinese web UI
@@ -41,7 +51,6 @@
 - Show a kanji information popup when a kanji is clicked on the back
 - Reveal reading and hidden kanji information by holding the front
 - Responsive card layout for desktop and mobile
-- Preview the actual `templates.js` locally
 
 ## Requirements
 
@@ -76,7 +85,6 @@ anki-helper-modular/
 ├─ docs/
 │  └─ images/
 │     └─ anki-card-preview.png
-└─ templates_local_preview.html
 ```
 
 ## User Setup
@@ -215,8 +223,8 @@ It uses 13 fields:
 | `Reading` | Full hiragana reading |
 | `Definition` | Japanese definition |
 | `NativeMeaning` | Meaning in the user's language |
-| `Expressions` | Common expressions |
-| `Examples` | Example sentences |
+| `Expressions` | Common expressions, with optional HTML ruby furigana |
+| `Examples` | Example sentences, with optional HTML ruby furigana |
 | `Synonyms` | Synonyms |
 | `KanjiData` | Per-kanji information as JSON |
 | `WordAudio` | Word audio tag |
@@ -248,6 +256,8 @@ Shows the native-language meaning on the back.
 
 ## Card JSON Example
 
+Expressions and examples may contain safe HTML ruby tags. Do not use Markdown inside JSON string values.
+
 ```json
 {
   "cardMode": "jp-native",
@@ -256,14 +266,14 @@ Shows the native-language meaning on the back.
   "definition": "正しい道理。また、社会を公平に保つための正しい考え方。",
   "nativeMeaning": "justice; righteousness",
   "expressions": [
-    "正義を貫く",
-    "正義を守る",
-    "正義に反する",
-    "正義の味方"
+    "<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>を<ruby><rb>貫</rb><rt>つらぬ</rt></ruby>",
+    "<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>を<ruby><rb>守</rb><rt>まも</rt></ruby>る",
+    "<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>に<ruby><rb>反</rb><rt>はん</rt></ruby>する",
+    "<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>の<ruby><rb>味方</rb><rt>みかた</rt></ruby>"
   ],
   "examples": [
-    "彼は最後まで自分の正義を貫いた。",
-    "それは正義に反する行為だ。"
+    "<ruby><rb>彼</rb><rt>かれ</rt></ruby>は<ruby><rb>最後</rb><rt>さいご</rt></ruby>まで<ruby><rb>自分</rb><rt>じぶん</rt></ruby>の<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>を<ruby><rb>貫</rb><rt>つらぬ</rt></ruby>いた。",
+    "それは<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>に<ruby><rb>反</rb><rt>はん</rt></ruby>する<ruby><rb>行為</rb><rt>こうい</rt></ruby>だ。"
   ],
   "exampleReadings": [
     "かれはさいごまでじぶんのせいぎをつらぬいた。",
@@ -283,18 +293,56 @@ Shows the native-language meaning on the back.
 
 ## GPT Prompt Example
 
+The copy prompt is written in English so it behaves consistently across the English, Japanese, Korean, and Chinese UI.
+
 ```text
-Create one card JSON object for signife_anki_helper from the following Japanese word.
-Return JSON only. Do not include explanations or a code fence.
+Create one valid JSON object for the signife_anki_helper Anki note type from the following Japanese word or grammar expression.
 
-Fields:
-cardMode, word, reading, definition, nativeMeaning,
-expressions, examples, exampleReadings, synonyms, kanji.
+Output JSON only.
+Do not include explanations, markdown, or code fences.
 
-Write reading as the complete and accurate hiragana reading of the headword.
-Write exampleReadings in the same order as examples, using the full hiragana reading of each sentence.
-Write kanji as an object containing the reading and meaning of each kanji in the headword.
-Set cardMode to jp-native.
+Required fields:
+cardMode, word, reading, definition, nativeMeaning, expressions, examples, exampleReadings, synonyms, kanji.
+
+Rules:
+1. cardMode must be "jp-native".
+2. word must contain the target Japanese word or grammar expression.
+3. reading must contain the full hiragana reading of the target word or expression.
+4. definition must be a natural Japanese dictionary-style definition.
+5. nativeMeaning must be a natural meaning in the user's native language.
+6. expressions must contain 3 to 5 common collocations or fixed expressions.
+7. examples must contain 2 natural Japanese example sentences.
+8. exampleReadings must contain the full hiragana readings of examples, in the same order.
+9. synonyms must contain 2 to 4 synonyms or similar expressions.
+10. kanji must be an object. For each kanji in the target word, include its onyomi, kunyomi, and meaning.
+11. If there is no information for a field, use [] or {}, not null.
+12. The JSON must be valid. Do not add trailing commas.
+
+Ruby rules for expressions and examples:
+- In expressions and examples, add furigana to kanji by using HTML ruby tags.
+- Use this exact format:
+  <ruby><rb>漢字</rb><rt>かんじ</rt></ruby>
+- Do not add ruby tags to hiragana, katakana, particles, or punctuation.
+- Do not use Markdown.
+- Do not use bullet syntax inside JSON string values.
+- Keep the sentence natural and readable.
+
+Example of ruby format:
+<ruby><rb>彼</rb><rt>かれ</rt></ruby>は<ruby><rb>最後</rb><rt>さいご</rt></ruby>まで<ruby><rb>自分</rb><rt>じぶん</rt></ruby>の<ruby><rb>正義</rb><rt>せいぎ</rt></ruby>を<ruby><rb>貫</rb><rt>つらぬ</rt></ruby>いた。
+
+Output format:
+{
+  "cardMode": "jp-native",
+  "word": "",
+  "reading": "",
+  "definition": "",
+  "nativeMeaning": "",
+  "expressions": [],
+  "examples": [],
+  "exampleReadings": [],
+  "synonyms": [],
+  "kanji": {}
+}
 ```
 
 ## Audio Generation Flow
@@ -340,13 +388,14 @@ The card template does not guess filenames. It only renders:
 - Clickable per-kanji popup
 - Word audio
 - Japanese definition or native meaning
+- Furigana toggle for expressions and examples
 - Scrollable gray detail area
-  - Examples
+  - Examples with optional ruby furigana
   - Example audio
-  - Common expressions
+  - Common expressions with optional ruby furigana
   - Synonyms
 
-The card font is selected in `config.js` and passed to `buildCardCss(fontStack)`.
+The card font is selected in `config.js` and passed to `buildCardCss(fontStack)`. Font stacks use installed system fonts; bundled fonts are not required for normal desktop use.
 
 ## AivisSpeech Configuration
 
@@ -377,11 +426,6 @@ Open:
 http://localhost:8000
 ```
 
-To preview the actual card template:
-
-```text
-http://localhost:8000/templates_local_preview.html
-```
 
 ## Troubleshooting
 
@@ -407,10 +451,20 @@ Check:
 
 ### Card Design Did Not Update
 
-1. Edit `js/templates.js`
+1. Edit `js/templates.js` or `js/app.js`
 2. Hard-refresh the browser
 3. Click **Create recommended Anki setup** again
-4. Check the note type templates in Anki
+4. Check the note type templates and styling in Anki
+
+### Ruby Furigana Does Not Appear
+
+Check:
+
+- `expressions` and `examples` contain HTML ruby tags, not Markdown
+- The app stores `Expressions` and `Examples` with the ruby-aware list renderer
+- The back template includes the furigana toggle script
+- You clicked **Create recommended Anki setup** again after changing templates or CSS
+
 
 ## Privacy
 
