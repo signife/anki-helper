@@ -75,8 +75,7 @@ anki-helper-modular/
 │  └─ translations.js
 ├─ docs/
 │  └─ images/
-│     └─ anki-card-preview.png
-└─ templates_local_preview.html
+└─    └─ anki-card-preview.png
 ```
 
 ## User Setup
