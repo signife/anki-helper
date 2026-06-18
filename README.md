@@ -6,6 +6,14 @@
   <a href="./README.ko.md">한국어</a>
 </p>
 
+<p align="center">
+  <a href="https://signife.github.io/anki-helper/">
+    <img
+      src="https://img.shields.io/badge/Open%20Web%20App-Anki%20Vocabulary%20Helper-2EA44F?style=for-the-badge"
+      alt="Open Anki Vocabulary Helper"
+    >
+  </a>
+</p>
 
 <p align="center">
   <img src="./docs/images/anki-card-preview.png" alt="Anki vocabulary card preview" width="760">
@@ -45,7 +53,9 @@
 
 ## Requirements
 
-The web page itself does not need to be installed. Open the deployed GitHub Pages site in a browser.
+The web page itself does not need to be installed. Open the deployed web app:
+
+**https://signife.github.io/anki-helper/**
 
 Required local applications:
 
@@ -79,6 +89,10 @@ anki-helper-modular/
 ```
 
 ## User Setup
+
+Open the web app:
+
+**[https://signife.github.io/anki-helper/](https://signife.github.io/anki-helper/)**
 
 ### 1. Install Anki
 
