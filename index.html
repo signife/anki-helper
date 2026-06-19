@@ -209,6 +209,13 @@
             ⚙ <span data-i18n="createSetup">Create recommended Anki setup</span>
           </button>
 
+          <div id="setupProgress" class="setup-progress" hidden>
+            <div class="setup-progress-track">
+              <div id="setupProgressBar" class="setup-progress-bar"></div>
+            </div>
+            <div id="setupProgressText" class="setup-progress-text">Ready</div>
+          </div>
+
           <div id="setupResult" class="setup-result"></div>
         </div>
 
@@ -303,7 +310,15 @@
       <div id="operationResultIcon" class="operation-result-icon" hidden></div>
       <h2 id="operationTitle">Adding card</h2>
       <p id="operationMessage">Preparing…</p>
-      <pre id="operationDetails" class="operation-details" hidden></pre>
+
+      <div id="operationProgress" class="operation-progress" hidden>
+        <div class="operation-progress-track">
+          <div id="operationProgressBar" class="operation-progress-bar"></div>
+        </div>
+        <div id="operationProgressText" class="operation-progress-text">0%</div>
+      </div>
+
+    <pre id="operationDetails" class="operation-details" hidden></pre>
       <button id="operationCloseBtn" class="btn btn-secondary" type="button" hidden data-i18n="close">Close</button>
     </section>
   </div>
