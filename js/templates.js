@@ -3,7 +3,7 @@ export function buildCardTemplates() {
 <div class="jlpt-card jlpt-front">
   <div class="front-center no-select">
     <div class="word-area">
-      <div id="frontWordCharacters" class="word-ruby word-characters"></div>
+      <div id="frontWordCharacters" class="top-word-ruby word-ruby word-characters"></div>
       <span id="frontWordSource" hidden>{{Word}}</span>
     </div>
 
@@ -65,7 +65,7 @@ export function buildCardTemplates() {
   <div class="back-layout">
     <header class="back-header">
       <div class="word-area">
-        <div id="backDisplayWord" class="word-ruby word-characters">
+        <div id="backDisplayWord" class="top-word-ruby word-ruby word-characters">
           {{furigana:FuriganaWord}}
         </div>
         <span id="backWordSource" hidden>{{Word}}</span>
@@ -81,7 +81,7 @@ export function buildCardTemplates() {
 
       <div id="wordAudioStore" class="audio-store">{{WordAudio}}</div>
       <div id="examplesAudioStore" class="audio-store">{{ExamplesAudio}}</div>
-      <div id="synonymsAudioStore" class="audio-store">{{SynonymsAudio}}</div>
+      <div id="expressionsAudioStore" class="audio-store">{{ExpressionsAudio}}</div>
 
       <div class="meaning-divider"></div>
 
@@ -310,27 +310,33 @@ export function buildCardTemplates() {
     });
   }
 
-  const exampleItems = document.querySelectorAll(".examples-section .content-list li");
-  const exampleButtons = document.querySelectorAll("#examplesAudioStore .replay-button");
+  const flashClickedItem = item => {
+    item.classList.remove("audio-flash");
+    void item.offsetWidth;
+    item.classList.add("audio-flash");
 
-  exampleItems.forEach((item, index) => {
-    item.classList.add("clickable-audio");
-    item.addEventListener("click", event => {
-      event.stopPropagation();
-      exampleButtons[index]?.click();
+    clearTimeout(item.audioFlashTimer);
+    item.audioFlashTimer = setTimeout(() => {
+      item.classList.remove("audio-flash");
+    }, 280);
+  };
+
+  const setupListAudio = (sectionSelector, audioStoreSelector) => {
+  const items = document.querySelectorAll(sectionSelector + " .content-list li");
+const buttons = document.querySelectorAll(audioStoreSelector + " .replay-button");
+
+    items.forEach((item, index) => {
+      item.classList.add("clickable-audio");
+      item.addEventListener("click", event => {
+        event.stopPropagation();
+        flashClickedItem(item);
+        buttons[index]?.click();
+      });
     });
-  });
+  };
 
-  const synonymItems = document.querySelectorAll(".synonyms-section .content-list li");
-  const synonymButtons = document.querySelectorAll("#synonymsAudioStore .replay-button");
-
-  synonymItems.forEach((item, index) => {
-    item.classList.add("clickable-audio");
-    item.addEventListener("click", event => {
-      event.stopPropagation();
-      synonymButtons[index]?.click();
-    });
-  });
+  setupListAudio(".examples-section", "#examplesAudioStore");
+  setupListAudio(".expressions-section", "#expressionsAudioStore");
 })();
 <\/script>`;
 
@@ -370,6 +376,19 @@ body,
 .jlpt-card {
   width: 100%;
   height: 100dvh;
+
+  /* 상단 Word / 루비 전용 조절값 */
+  --top-word-size: clamp(38px, 5.6vw, 54px);
+  --top-word-ruby-size: .35em;
+  --top-word-line-height: 1.16;
+  --top-word-letter-spacing: .035em;
+
+  /* 요미가나 색상: 예문 / Common expressions / 상단 Word ruby 공통 */
+  --ruby-color: #666;
+
+  /* 문장 클릭 반응 색상 */
+  --audio-flash-bg: rgba(255,255,255,.48);
+  --audio-flash-color: #000;
 }
 
 .no-select {
@@ -446,12 +465,26 @@ body,
 }
 
 .word-ruby rt {
-  color: #d0d0d0;
+  color: var(--ruby-color, #666);
   font-family: ${fontStack} !important;
   font-size: .32em !important;
   font-weight: 400 !important;
   line-height: 1.1 !important;
   letter-spacing: .04em !important;
+}
+
+/* 상단 Word 전용: 여기만 바꾸면 위쪽 단어 크기와 루비 크기만 따로 바뀜 */
+#frontWordCharacters.top-word-ruby,
+#backDisplayWord.top-word-ruby {
+  font-size: var(--top-word-size) !important;
+  line-height: var(--top-word-line-height) !important;
+  letter-spacing: var(--top-word-letter-spacing) !important;
+}
+
+#frontWordCharacters.top-word-ruby rt,
+#backDisplayWord.top-word-ruby rt {
+  color: var(--ruby-color, #666) !important;
+  font-size: var(--top-word-ruby-size) !important;
 }
 
 .word-character {
@@ -566,10 +599,17 @@ body,
 
 .clickable-audio {
   cursor: pointer;
+  border-radius: 7px;
+  transition: background-color .18s ease, color .18s ease, opacity .18s ease;
 }
 
 .clickable-audio:active {
   opacity: .72;
+}
+
+.clickable-audio.audio-flash {
+  color: var(--audio-flash-color, #000);
+  background: var(--audio-flash-bg, rgba(255,255,255,.48));
 }
 
 .definition {
@@ -659,7 +699,10 @@ body,
   text-align: center;
 }
 .content-list li {
-  margin: .65em 0;
+  width: fit-content;
+  max-width: 100%;
+  margin: .65em auto;
+  padding: .03em .38em;
   text-align: center;
 }
 
@@ -668,7 +711,7 @@ body,
 }
 
 .content-list ruby rt {
-  color: #8d1717;
+  color: var(--ruby-color, #666);
   font-family: ${fontStack};
   font-size: .58em;
   font-weight: 400;
@@ -718,6 +761,11 @@ body,
 }
 
 @media (max-width: 480px) {
+  .jlpt-card {
+    --top-word-size: clamp(36px, 10.5vw, 48px);
+    --top-word-ruby-size: .34em;
+  }
+
   .front-center,
   .back-header {
     padding: 16px 12px 11px;
