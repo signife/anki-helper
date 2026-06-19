@@ -252,6 +252,10 @@ function validateCard(card) {
     throw new Error("reading is required.");
   }
 
+  if (!card.furiganaWord || typeof card.furiganaWord !== "string") {
+  throw new Error("furiganaWord is required.");
+}
+
   if (!card.definition || typeof card.definition !== "string") {
     throw new Error("definition is required.");
   }
@@ -400,7 +404,7 @@ function parseInput() {
 function updatePreview(card) {
   elements.preview.hidden = false;
   elements.previewWord.textContent = card.word ?? "";
-  elements.previewReading.textContent = card.reading ?? "";
+  elements.previewReading.textContent = card.furiganaWord ?? card.reading ?? "";
   elements.previewDefinition.textContent = card.definition ?? "";
   elements.previewNativeMeaning.textContent = card.nativeMeaning ?? "";
 
@@ -733,13 +737,15 @@ async function createAudioFields(card, progressPrefix = "") {
   const fields = {
     WordAudio: "",
     ExamplesAudio: "",
+    SynonymsAudio: "",
     WordAudioSource: "",
-    ExamplesAudioSource: ""
+    ExamplesAudioSource: "",
+    SynonymsAudioSource: ""
   };
 
   if (elements.generateWordAudio.checked) {
     const wordVoiceText = String(card.voiceText || card.reading || card.word).trim();
-    updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} 단어 음성 생성 중… ${card.word} (${wordVoiceText})`);
+    updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} Generating word voice...${card.word} (${wordVoiceText})`);
     fields.WordAudio = await synthesizeAndStore(wordVoiceText, "word");
     fields.WordAudioSource = makeAudioSource(wordVoiceText);
   }
@@ -757,7 +763,7 @@ async function createAudioFields(card, progressPrefix = "") {
           : example
       ).trim();
 
-      updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} 예문 음성 생성 중… ${index + 1}/${card.examples.length}`);
+      updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} Generating example voice... ${index + 1}/${card.examples.length}`);
       audioTags.push(await synthesizeAndStore(exampleVoiceText, `example_${index + 1}`));
     }
 
@@ -765,25 +771,43 @@ async function createAudioFields(card, progressPrefix = "") {
     fields.ExamplesAudioSource = makeAudioSource(card.examples.join("\n"));
   }
 
+  if (elements.generateExampleAudio.checked && Array.isArray(card.synonyms) && card.synonyms.length) {
+    const audioTags = [];
+
+    for (let index = 0; index < card.synonyms.length; index += 1) {
+      const synonym = String(card.synonyms[index] || "").trim();
+      if (!synonym) continue;
+
+      updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} 유의어 음성 생성 중… ${index + 1}/${card.synonyms.length}`);
+      audioTags.push(await synthesizeAndStore(synonym, `synonym_${index + 1}`));
+    }
+
+    fields.SynonymsAudio = audioTags.join(" ");
+    fields.SynonymsAudioSource = makeAudioSource(card.synonyms.join("\n"));
+  }
+
   return fields;
 }
 
 async function ensureSpeechEngineFieldsAndTemplates(modelName, fontStack) {
   const requiredFields = [
-    "CardMode",
-    "Word",
-    "Reading",
-    "Definition",
-    "NativeMeaning",
-    "Expressions",
-    "Examples",
-    "Synonyms",
-    "KanjiData",
-    "WordAudio",
-    "ExamplesAudio",
-    "WordAudioSource",
-    "ExamplesAudioSource"
-  ];
+  "CardMode",
+  "Word",
+  "Reading",
+  "FuriganaWord",
+  "Definition",
+  "NativeMeaning",
+  "Expressions",
+  "Examples",
+  "Synonyms",
+  "KanjiData",
+  "WordAudio",
+  "ExamplesAudio",
+  "SynonymsAudio",
+  "WordAudioSource",
+  "ExamplesAudioSource",
+  "SynonymsAudioSource"
+];
 
   const existingFields = await invoke("modelFieldNames", { modelName });
 
@@ -877,6 +901,7 @@ async function createRecommendedSetup() {
           "CardMode",
           "Word",
           "Reading",
+          "FuriganaWord",
           "Definition",
           "NativeMeaning",
           "Expressions",
@@ -885,8 +910,10 @@ async function createRecommendedSetup() {
           "KanjiData",
           "WordAudio",
           "ExamplesAudio",
+          "SynonymsAudio",
           "WordAudioSource",
-          "ExamplesAudioSource"
+          "ExamplesAudioSource",
+          "SynonymsAudioSource"
         ],
         css: buildCardCss(fontStack),
         isCloze: false,
@@ -924,6 +951,7 @@ async function addOneCardToAnki(card, index, total) {
     CardMode: escapeHtml(card.cardMode),
     Word: escapeHtml(card.word),
     Reading: escapeHtml(card.reading),
+    FuriganaWord: escapeHtml(card.furiganaWord),
     Definition: escapeHtml(card.definition),
     NativeMeaning: escapeHtml(card.nativeMeaning),
     Expressions: rubyListToHtml(card.expressions),
@@ -1091,21 +1119,24 @@ Output JSON only.
 Do not include explanations, markdown, or code fences.
 
 Required fields:
-cardMode, word, reading, definition, nativeMeaning, expressions, examples, exampleReadings, synonyms, kanji.
+cardMode, word, reading, furiganaWord, definition, nativeMeaning, expressions, examples, exampleReadings, synonyms, kanji.
 
 Rules:
 1. cardMode must be "jp-native".
 2. word must contain the target Japanese word or grammar expression.
 3. reading must contain the full hiragana reading of the target word or expression.
-4. definition must be a natural Japanese dictionary-style definition.
-5. nativeMeaning must be a natural meaning in the user's native language.
-6. expressions must contain 3 to 5 common collocations or fixed expressions.
-7. examples must contain 2 natural Japanese example sentences.
-8. exampleReadings must contain the full hiragana readings of examples, in the same order.
-9. synonyms must contain 2 to 4 synonyms or similar expressions.
-10. kanji must be an object. For each kanji in the target word, include its onyomi, kunyomi, and meaning.
-11. If there is no information for a field, use [] or {}, not null.
-12. The JSON must be valid. Do not add trailing commas.
+4. furiganaWord must contain the target word or expression using Anki furigana syntax.
+   Use 漢字[reading] only where furigana is needed.
+   Example: 付[つ]け加[くわ]える, 蔑[ないがし]ろにする, 見栄[みえ]を張[は]る.
+5. definition must be a natural Japanese dictionary-style definition.
+6. nativeMeaning must be a natural meaning in the user's native language.
+7. expressions must contain 3 to 5 common collocations or fixed expressions.
+8. examples must contain 2 natural Japanese example sentences.
+9. exampleReadings must contain the full hiragana readings of examples, in the same order.
+10. synonyms must contain 2 to 4 synonyms or similar expressions.
+11. kanji must be an object. For each kanji in the target word, include its onyomi, kunyomi, and meaning.
+12. If there is no information for a field, use [] or {}, not null.
+13. The JSON must be valid. Do not add trailing commas.
 
 Ruby rules for expressions and examples:
 - In expressions and examples, add furigana to kanji by using HTML ruby tags.
@@ -1122,6 +1153,7 @@ Output format:
   "cardMode": "jp-native",
   "word": "",
   "reading": "",
+  "furiganaWord": "",
   "definition": "",
   "nativeMeaning": "",
   "expressions": [],
