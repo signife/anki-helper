@@ -84,6 +84,7 @@ export function buildCardTemplates() {
       <div id="expressionsAudioStore" class="audio-store">{{ExpressionsAudio}}</div>
 
       <div class="meaning-divider"></div>
+      
 
       <section id="definitionSection" class="meaning-section">
         <div class="definition">{{Definition}}</div>
