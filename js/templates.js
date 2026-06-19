@@ -1,12 +1,9 @@
 export function buildCardTemplates() {
-  const front = `
+ const front = `
 <div class="jlpt-card jlpt-front">
   <div class="front-center no-select">
     <div class="word-area">
-      <ruby class="word-ruby">
-        <rb id="frontWordCharacters" class="word-characters"></rb>
-        <rt class="front-hidden">{{Reading}}</rt>
-      </ruby>
+      <div id="frontWordCharacters" class="word-ruby word-characters"></div>
       <span id="frontWordSource" hidden>{{Word}}</span>
     </div>
 
@@ -14,7 +11,7 @@ export function buildCardTemplates() {
       {{#KanjiData}}<div class="front-kanji-data">{{KanjiData}}</div>{{/KanjiData}}
     </div>
 
-    <div class="word-audio">{{WordAudio}}</div>
+    <div id="frontWordAudioStore" class="audio-store">{{WordAudio}}</div>
   </div>
 </div>
 
@@ -68,10 +65,9 @@ export function buildCardTemplates() {
   <div class="back-layout">
     <header class="back-header">
       <div class="word-area">
-        <ruby class="word-ruby">
-          <rb id="backWordCharacters" class="word-characters"></rb>
-          <rt>{{Reading}}</rt>
-        </ruby>
+        <div id="backDisplayWord" class="word-ruby word-characters">
+          {{furigana:FuriganaWord}}
+        </div>
         <span id="backWordSource" hidden>{{Word}}</span>
         <span id="backKanjiSource" hidden>{{KanjiData}}</span>
       </div>
@@ -81,8 +77,11 @@ export function buildCardTemplates() {
         <div id="kanjiPopupContent"></div>
       </div>
 
-      <div class="word-audio">{{WordAudio}}</div>
       <div class="mode-source" data-card-mode="{{CardMode}}" hidden></div>
+
+      <div id="wordAudioStore" class="audio-store">{{WordAudio}}</div>
+      <div id="examplesAudioStore" class="audio-store">{{ExamplesAudio}}</div>
+      <div id="synonymsAudioStore" class="audio-store">{{SynonymsAudio}}</div>
 
       <div class="meaning-divider"></div>
 
@@ -109,19 +108,18 @@ export function buildCardTemplates() {
       {{#Examples}}
       <section class="detail-section examples-section">
         <div class="content-list">{{Examples}}</div>
-        <div class="examples-audio">{{ExamplesAudio}}</div>
       </section>
       {{/Examples}}
 
       {{#Expressions}}
-      <section class="detail-section">
+      <section class="detail-section expressions-section">
         <div class="detail-label">Common expressions</div>
         <div class="content-list">{{Expressions}}</div>
       </section>
       {{/Expressions}}
 
       {{#Synonyms}}
-      <section class="detail-section">
+      <section class="detail-section synonyms-section">
         <div class="detail-label">Synonyms</div>
         <div class="content-list">{{Synonyms}}</div>
       </section>
@@ -134,14 +132,11 @@ export function buildCardTemplates() {
 (() => {
   const wordSourceEl = document.getElementById("backWordSource");
   const kanjiSourceEl = document.getElementById("backKanjiSource");
-  const wordEl = document.getElementById("backWordCharacters");
+  const displayWordEl = document.getElementById("backDisplayWord");
   const popupEl = document.getElementById("kanjiPopup");
   const popupTitleEl = document.getElementById("kanjiPopupTitle");
   const popupContentEl = document.getElementById("kanjiPopupContent");
 
-  if (!wordSourceEl || !wordEl || !popupEl || !popupTitleEl || !popupContentEl) return;
-
-  const rawWord = wordSourceEl.textContent || "";
   const rawKanji = kanjiSourceEl?.textContent || "{}";
 
   let kanjiData = {};
@@ -151,13 +146,20 @@ export function buildCardTemplates() {
     kanjiData = {};
   }
 
+  const isKanji = character => /[\\u3400-\\u9FFF々]/.test(character);
+
   const hidePopup = () => {
+    if (!popupEl) return;
     popupEl.hidden = true;
     popupEl.style.visibility = "hidden";
-    document.querySelectorAll(".word-character.clicked").forEach(el => el.classList.remove("clicked"));
+    document.querySelectorAll(".word-character.clicked").forEach(el => {
+      el.classList.remove("clicked");
+    });
   };
 
   const positionPopup = target => {
+    if (!popupEl) return;
+
     popupEl.hidden = false;
     popupEl.style.visibility = "hidden";
     popupEl.style.left = "0px";
@@ -167,55 +169,112 @@ export function buildCardTemplates() {
       const targetRect = target.getBoundingClientRect();
       const popupRect = popupEl.getBoundingClientRect();
       const edge = 10;
+
       let left = targetRect.left + targetRect.width / 2 - popupRect.width / 2;
       left = Math.max(edge, Math.min(left, window.innerWidth - popupRect.width - edge));
+
       let top = targetRect.bottom + 9;
       if (top + popupRect.height > window.innerHeight - edge) {
         top = Math.max(edge, targetRect.top - popupRect.height - 9);
       }
+
       popupEl.style.left = left + "px";
       popupEl.style.top = top + "px";
       popupEl.style.visibility = "visible";
     });
   };
 
-  for (const character of Array.from(rawWord)) {
+  const attachKanjiPopup = span => {
+    const character = span.textContent.trim();
     const info = kanjiData[character];
-    const span = document.createElement("span");
-    span.textContent = character;
-    span.className = info ? "word-character word-character-clickable" : "word-character";
 
-    if (info) {
-      const showPopup = event => {
-        event.preventDefault();
-        event.stopPropagation();
-        document.querySelectorAll(".word-character.clicked").forEach(el => el.classList.remove("clicked"));
-        span.classList.add("clicked");
-        popupTitleEl.textContent = character;
-        popupContentEl.textContent = typeof info === "string" ? info : JSON.stringify(info, null, 2);
-        positionPopup(span);
-      };
-      span.addEventListener("click", showPopup);
-      span.addEventListener("keydown", event => {
-        if (event.key === "Enter" || event.key === " ") showPopup(event);
+    if (!info || !popupEl || !popupTitleEl || !popupContentEl) return;
+
+    span.classList.add("word-character-clickable");
+    span.tabIndex = 0;
+    span.setAttribute("role", "button");
+
+    const showPopup = event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      document.querySelectorAll(".word-character.clicked").forEach(el => {
+        el.classList.remove("clicked");
       });
-      span.tabIndex = 0;
-      span.setAttribute("role", "button");
+
+      span.classList.add("clicked");
+      popupTitleEl.textContent = character;
+      popupContentEl.textContent =
+        typeof info === "string"
+          ? info
+          : JSON.stringify(info, null, 2);
+
+      positionPopup(span);
+    };
+
+    span.addEventListener("click", showPopup);
+    span.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") showPopup(event);
+    });
+  };
+
+  const wrapKanjiTextNodes = root => {
+    if (!root) return;
+
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (parent.closest("rt, rp")) return NodeFilter.FILTER_REJECT;
+          if (!node.textContent || !/[\\u3400-\\u9FFF々]/.test(node.textContent)) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+
+    const textNodes = [];
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
     }
 
-    wordEl.appendChild(span);
-  }
+    for (const node of textNodes) {
+      const fragment = document.createDocumentFragment();
 
-  popupEl.addEventListener("click", event => event.stopPropagation());
-  document.addEventListener("click", hidePopup);
-  window.addEventListener("resize", hidePopup);
-  window.addEventListener("scroll", hidePopup, true);
+      for (const character of Array.from(node.textContent)) {
+        if (isKanji(character)) {
+          const span = document.createElement("span");
+          span.className = "word-character";
+          span.textContent = character;
+          attachKanjiPopup(span);
+          fragment.appendChild(span);
+        } else {
+          fragment.appendChild(document.createTextNode(character));
+        }
+      }
+
+      node.replaceWith(fragment);
+    }
+  };
+
+  wrapKanjiTextNodes(displayWordEl);
+
+  if (popupEl) {
+    popupEl.addEventListener("click", event => event.stopPropagation());
+    document.addEventListener("click", hidePopup);
+    window.addEventListener("resize", hidePopup);
+    window.addEventListener("scroll", hidePopup, true);
+  }
 
   const mode = document.querySelector(".mode-source")?.dataset.cardMode || "jp-jp";
   const definition = document.getElementById("definitionSection");
   const nativeMeaning = document.getElementById("nativeMeaningSection");
 
-    if (mode === "jp-native") {
+  if (mode === "jp-native") {
     if (definition) definition.hidden = true;
     if (nativeMeaning) nativeMeaning.hidden = false;
   } else {
@@ -226,8 +285,11 @@ export function buildCardTemplates() {
   const toggleRuby = document.getElementById("toggle-ruby");
   const detailTray = document.querySelector(".detail-tray");
 
-  if (toggleRuby && detailTray) {
-    const rts = detailTray.querySelectorAll("ruby rt");
+  if (toggleRuby) {
+    const rts = [
+      ...(displayWordEl ? displayWordEl.querySelectorAll("ruby rt") : []),
+      ...(detailTray ? detailTray.querySelectorAll("ruby rt") : [])
+    ];
 
     let rubyOn = localStorage.getItem("rubyOn");
     rubyOn = rubyOn === null ? true : rubyOn === "true";
@@ -247,6 +309,28 @@ export function buildCardTemplates() {
       updateRuby();
     });
   }
+
+  const exampleItems = document.querySelectorAll(".examples-section .content-list li");
+  const exampleButtons = document.querySelectorAll("#examplesAudioStore .replay-button");
+
+  exampleItems.forEach((item, index) => {
+    item.classList.add("clickable-audio");
+    item.addEventListener("click", event => {
+      event.stopPropagation();
+      exampleButtons[index]?.click();
+    });
+  });
+
+  const synonymItems = document.querySelectorAll(".synonyms-section .content-list li");
+  const synonymButtons = document.querySelectorAll("#synonymsAudioStore .replay-button");
+
+  synonymItems.forEach((item, index) => {
+    item.classList.add("clickable-audio");
+    item.addEventListener("click", event => {
+      event.stopPropagation();
+      synonymButtons[index]?.click();
+    });
+  });
 })();
 <\/script>`;
 
@@ -314,7 +398,7 @@ body,
 
 .back-layout {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   height: 100dvh;
   overflow: hidden;
 }
@@ -343,7 +427,7 @@ body,
 
 .word-ruby {
   font-family: ${fontStack} !important;
-  font-size: clamp(2.55rem, 7vw, 3.25rem) !important;
+  font-size: clamp(2.05rem, 5.8vw, 2.65rem) !important;
   font-weight: 400 !important;
   line-height: 1.15 !important;
   letter-spacing: .02em !important;
@@ -411,16 +495,16 @@ body,
 .replay-button {
   display: inline-grid !important;
   place-items: center;
-  width: 44px !important;
-  height: 44px !important;
+  width: 46px !important;
+  height: 46px !important;
   margin: 0 !important;
   padding: 0 !important;
   border-radius: 50% !important;
 }
 
 .replay-button svg {
-  width: 27px !important;
-  height: 27px !important;
+  width: 31px !important;
+  height: 31px !important;
 }
 
 .meaning-divider {
@@ -431,8 +515,15 @@ body,
 }
 
 .reading-controls {
+  position: relative;
+  z-index: 5;
   padding: 0 18px 10px;
   text-align: center;
+}
+
+.detail-tray {
+  position: relative;
+  z-index: 1;
 }
 
 .toggle-switch {
@@ -462,21 +553,50 @@ body,
   text-align: center;
 }
 
-.definition,
+.audio-store {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.clickable-audio {
+  cursor: pointer;
+}
+
+.clickable-audio:active {
+  opacity: .72;
+}
+
+.definition {
+  max-width: 700px;
+  margin: 0 auto;
+  color: #fff;
+  font-family: ${fontStack};
+  font-size: clamp(1.1rem, 3.2vw, 1.45rem);
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .native-meaning {
   max-width: 700px;
   margin: 0 auto;
   color: #fff;
   font-family: ${fontStack};
-  font-size: clamp(1.35rem, 4vw, 2rem);
+  font-size: clamp(1.15rem, 3.4vw, 1.55rem);
   font-weight: 400;
-  line-height: 1.35;
+  line-height: 1.4;
   text-align: center;
 }
-
 .detail-tray {
+  width: min(700px, calc(100% - 36px));
   min-height: 0;
-  margin: 0 10px 14px;
+  margin: 0 auto 14px;
   padding: 16px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -604,18 +724,22 @@ body,
   }
 
   .word-ruby {
-    font-size: clamp(2.25rem, 12vw, 2.9rem) !important;
+    font-size: clamp(1.95rem, 9.5vw, 2.45rem) !important;
   }
 
-  .definition,
-  .native-meaning {
-    font-size: clamp(1.2rem, 6vw, 1.65rem);
-  }
+ .definition {
+  font-size: clamp(1rem, 4.4vw, 1.25rem);
+}
+
+.native-meaning {
+  font-size: clamp(1.05rem, 4.8vw, 1.35rem);
+}
 
   .detail-tray {
-    margin: 0 7px 10px;
-    padding: 13px;
-  }
+  width: min(700px, calc(100% - 24px));
+  margin: 0 auto 10px;
+  padding: 13px;
+}
 }
 `;
 }
