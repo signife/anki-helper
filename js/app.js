@@ -30,6 +30,9 @@ const elements = {
   cardFont: $("#cardFont"),
   createSetupBtn: $("#createSetupBtn"),
   setupResult: $("#setupResult"),
+  setupProgress: $("#setupProgress"),
+  setupProgressBar: $("#setupProgressBar"),
+  setupProgressText: $("#setupProgressText"),
   modeTooltipTitle: $("#modeTooltipTitle"),
   modeBackDiagram: $("#modeBackDiagram"),
   jsonInput: $("#jsonInput"),
@@ -59,6 +62,9 @@ const elements = {
   operationResultIcon: $("#operationResultIcon"),
   operationTitle: $("#operationTitle"),
   operationMessage: $("#operationMessage"),
+  operationProgress: $("#operationProgress"),
+  operationProgressBar: $("#operationProgressBar"),
+  operationProgressText: $("#operationProgressText"),
   operationDetails: $("#operationDetails"),
   operationCloseBtn: $("#operationCloseBtn"),
   openAnkiConnectBtn: $("#openAnkiConnectBtn"),
@@ -97,29 +103,85 @@ function setConnectionState(state) {
   }
 }
 
-function showOperationLoading(message) {
-  elements.operationModal.hidden = false;
-  document.body.classList.add("modal-open");
-  elements.operationSpinner.hidden = false;
+function resetOperationModalState() {
+  elements.operationSpinner.hidden = true;
   elements.operationResultIcon.hidden = true;
   elements.operationDetails.hidden = true;
   elements.operationCloseBtn.hidden = true;
-  elements.operationTitle.textContent = t("operationAddingTitle");
-  elements.operationMessage.textContent = message || t("operationPreparing");
+
+  if (elements.operationProgress) {
+    elements.operationProgress.hidden = true;
+  }
+
+  if (elements.operationProgressBar) {
+    elements.operationProgressBar.style.width = "0%";
+  }
+
+  if (elements.operationProgressText) {
+    elements.operationProgressText.textContent = "0%";
+  }
+
+  elements.operationResultIcon.className = "operation-result-icon";
+  elements.operationResultIcon.textContent = "";
   elements.operationDetails.textContent = "";
 }
 
-function updateOperationProgress(message) {
+function setOperationProgress(percent, message = "") {
+  const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+
+  if (elements.operationProgress) {
+    elements.operationProgress.hidden = false;
+  }
+
+  if (elements.operationProgressBar) {
+    elements.operationProgressBar.style.width = `${safePercent}%`;
+  }
+
+  if (elements.operationProgressText) {
+    elements.operationProgressText.textContent = `${Math.round(safePercent)}%`;
+  }
+
+  if (message) {
+    elements.operationMessage.textContent = message;
+    setStatus(message);
+  }
+}
+
+function showOperationLoading(message) {
+  resetOperationModalState();
+
+  elements.operationModal.hidden = false;
+  document.body.classList.add("modal-open");
+  elements.operationSpinner.hidden = false;
+  elements.operationTitle.textContent = t("operationAddingTitle");
+  elements.operationMessage.textContent = message || t("operationPreparing");
+
+  setOperationProgress(5, message || t("operationPreparing"));
+}
+
+function updateOperationProgress(message, percent = null) {
   if (!elements.operationModal.hidden && !elements.operationSpinner.hidden) {
     elements.operationMessage.textContent = message;
+
+    if (percent !== null) {
+      setOperationProgress(percent, message);
+    }
   }
+
   setStatus(message);
 }
 
 function showOperationResult(success, message, details = "") {
+  resetOperationModalState();
+
   elements.operationModal.hidden = false;
   document.body.classList.add("modal-open");
   elements.operationSpinner.hidden = true;
+
+  if (elements.operationProgress) {
+    elements.operationProgress.hidden = true;
+  }
+
   elements.operationResultIcon.hidden = false;
   elements.operationResultIcon.className = `operation-result-icon ${success ? "success" : "error"}`;
   elements.operationResultIcon.textContent = success ? "✓" : "✕";
@@ -137,6 +199,7 @@ function closeOperationModal() {
   if (!elements.operationSpinner.hidden) return;
   elements.operationModal.hidden = true;
   document.body.classList.remove("modal-open");
+  resetOperationModalState();
   elements.addBtn.focus();
 }
 
@@ -192,6 +255,19 @@ function sanitizeRubyHtml(value) {
   }
 
   return template.innerHTML;
+}
+
+function rubyHtmlToSpeechText(value) {
+  const template = document.createElement("template");
+  template.innerHTML = sanitizeRubyHtml(value);
+
+  template.content.querySelectorAll("rt, rp").forEach(element => {
+    element.remove();
+  });
+
+  return (template.content.textContent || "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function rubyListToHtml(items) {
@@ -268,6 +344,13 @@ function validateCard(card) {
     if (card[key] !== undefined && !Array.isArray(card[key])) {
       throw new Error(`${key} must be an array.`);
     }
+  }
+
+  if (
+    card.expressionReadings !== undefined &&
+    !Array.isArray(card.expressionReadings)
+  ) {
+    throw new Error("expressionReadings must be an array.");
   }
 
   if (
@@ -737,10 +820,10 @@ async function createAudioFields(card, progressPrefix = "") {
   const fields = {
     WordAudio: "",
     ExamplesAudio: "",
-    SynonymsAudio: "",
+    ExpressionsAudio: "",
     WordAudioSource: "",
     ExamplesAudioSource: "",
-    SynonymsAudioSource: ""
+    ExpressionsAudioSource: ""
   };
 
   if (elements.generateWordAudio.checked) {
@@ -752,6 +835,7 @@ async function createAudioFields(card, progressPrefix = "") {
 
   if (elements.generateExampleAudio.checked && Array.isArray(card.examples) && card.examples.length) {
     const audioTags = [];
+    const sourceTexts = [];
 
     for (let index = 0; index < card.examples.length; index += 1) {
       const example = String(card.examples[index] || "").trim();
@@ -760,30 +844,43 @@ async function createAudioFields(card, progressPrefix = "") {
       const exampleVoiceText = String(
         Array.isArray(card.exampleReadings) && card.exampleReadings[index]
           ? card.exampleReadings[index]
-          : example
+          : rubyHtmlToSpeechText(example)
       ).trim();
+
+      if (!exampleVoiceText) continue;
 
       updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} Generating example voice... ${index + 1}/${card.examples.length}`);
       audioTags.push(await synthesizeAndStore(exampleVoiceText, `example_${index + 1}`));
+      sourceTexts.push(exampleVoiceText);
     }
 
     fields.ExamplesAudio = audioTags.join(" ");
-    fields.ExamplesAudioSource = makeAudioSource(card.examples.join("\n"));
+    fields.ExamplesAudioSource = makeAudioSource(sourceTexts.join("\n"));
   }
 
-  if (elements.generateExampleAudio.checked && Array.isArray(card.synonyms) && card.synonyms.length) {
+  if (elements.generateExampleAudio.checked && Array.isArray(card.expressions) && card.expressions.length) {
     const audioTags = [];
+    const sourceTexts = [];
 
-    for (let index = 0; index < card.synonyms.length; index += 1) {
-      const synonym = String(card.synonyms[index] || "").trim();
-      if (!synonym) continue;
+    for (let index = 0; index < card.expressions.length; index += 1) {
+      const expression = String(card.expressions[index] || "").trim();
+      if (!expression) continue;
 
-      updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} 유의어 음성 생성 중… ${index + 1}/${card.synonyms.length}`);
-      audioTags.push(await synthesizeAndStore(synonym, `synonym_${index + 1}`));
+      const expressionVoiceText = String(
+        Array.isArray(card.expressionReadings) && card.expressionReadings[index]
+          ? card.expressionReadings[index]
+          : rubyHtmlToSpeechText(expression)
+      ).trim();
+
+      if (!expressionVoiceText) continue;
+
+      updateOperationProgress(`${progressPrefix}${SPEECH_ENGINE.name} Common expressions 음성 생성 중… ${index + 1}/${card.expressions.length}`);
+      audioTags.push(await synthesizeAndStore(expressionVoiceText, `expression_${index + 1}`));
+      sourceTexts.push(expressionVoiceText);
     }
 
-    fields.SynonymsAudio = audioTags.join(" ");
-    fields.SynonymsAudioSource = makeAudioSource(card.synonyms.join("\n"));
+    fields.ExpressionsAudio = audioTags.join(" ");
+    fields.ExpressionsAudioSource = makeAudioSource(sourceTexts.join("\n"));
   }
 
   return fields;
@@ -803,10 +900,10 @@ async function ensureSpeechEngineFieldsAndTemplates(modelName, fontStack) {
   "KanjiData",
   "WordAudio",
   "ExamplesAudio",
-  "SynonymsAudio",
+  "ExpressionsAudio",
   "WordAudioSource",
   "ExamplesAudioSource",
-  "SynonymsAudioSource"
+  "ExpressionsAudioSource"
 ];
 
   const existingFields = await invoke("modelFieldNames", { modelName });
@@ -868,6 +965,38 @@ ${t("connectionHelp")}`, "error");
   }
 }
 
+function setSetupProgress(percent, message = "") {
+  const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+
+  if (elements.setupProgress) {
+    elements.setupProgress.hidden = false;
+  }
+
+  if (elements.setupProgressBar) {
+    elements.setupProgressBar.style.width = `${safePercent}%`;
+  }
+
+  if (elements.setupProgressText) {
+    elements.setupProgressText.textContent = message
+      ? `${Math.round(safePercent)}% · ${message}`
+      : `${Math.round(safePercent)}%`;
+  }
+}
+
+function resetSetupProgress() {
+  if (elements.setupProgress) {
+    elements.setupProgress.hidden = true;
+  }
+
+  if (elements.setupProgressBar) {
+    elements.setupProgressBar.style.width = "0%";
+  }
+
+  if (elements.setupProgressText) {
+    elements.setupProgressText.textContent = "Ready";
+  }
+}
+
 async function createRecommendedSetup() {
   const deckName = elements.deckName.value.trim() || "Japanese";
   const modelName = MODEL_NAME;
@@ -875,9 +1004,11 @@ async function createRecommendedSetup() {
 
   elements.createSetupBtn.disabled = true;
   elements.setupResult.textContent = t("setupStarting");
+  setSetupProgress(5, "Starting setup");
 
   try {
     await invoke("version");
+    setSetupProgress(15, "Anki connected");
 
     const lines = [];
     const decks = await invoke("deckNames");
@@ -889,10 +1020,14 @@ async function createRecommendedSetup() {
       lines.push(`${t("setupDeckCreated")}: ${deckName}`);
     }
 
+    setSetupProgress(35, "Deck checked");
+
     const models = await invoke("modelNames");
+    setSetupProgress(55, "Updating note type");
 
     if (models.includes(modelName)) {
       await ensureSpeechEngineFieldsAndTemplates(modelName, fontStack);
+      setSetupProgress(90, "Templates updated");
       lines.push(`${t("setupModelExists")}: ${modelName} · templates and CSS updated`);
     } else {
       await invoke("createModel", {
@@ -910,26 +1045,29 @@ async function createRecommendedSetup() {
           "KanjiData",
           "WordAudio",
           "ExamplesAudio",
-          "SynonymsAudio",
+          "ExpressionsAudio",
           "WordAudioSource",
           "ExamplesAudioSource",
-          "SynonymsAudioSource"
+          "ExpressionsAudioSource"
         ],
         css: buildCardCss(fontStack),
         isCloze: false,
         cardTemplates: buildCardTemplates()
       });
 
+      setSetupProgress(90, "Templates updated");
       lines.push(`${t("setupModelCreated")}: ${modelName}`);
     }
 
     saveSettings(false);
     lines.push(t("setupReady"));
+    setSetupProgress(100, "Setup complete");
 
     elements.setupResult.textContent = lines.join("\n");
     setStatus(t("setupReady"), "success");
   } catch (error) {
     const message = `${t("setupFailed")}\n${String(error.message || error)}`;
+    setSetupProgress(100, "Setup failed");
     elements.setupResult.textContent = message;
     setStatus(message, "error");
   } finally {
@@ -995,13 +1133,15 @@ async function addToAnki() {
 
   setAddButtonLoading(true);
   showOperationLoading(`${t("adding")} · ${cards.length} card(s)`);
+  setOperationProgress(3, `${t("adding")} · ${cards.length} card(s)`);
 
   const successes = [];
   const failures = [];
 
   try {
-    updateOperationProgress(`${SPEECH_ENGINE.name}와 Anki 연결을 확인하는 중…`);
+    updateOperationProgress(`${SPEECH_ENGINE.name}와 Anki 연결을 확인하는 중…`, 8);
     await invoke("version");
+    setOperationProgress(15, "Anki 연결 확인 완료");
 
     if (elements.generateWordAudio.checked || elements.generateExampleAudio.checked) {
       const speechEngineReady = await loadSpeechEngineSpeakers({ quiet: true });
@@ -1015,7 +1155,8 @@ async function addToAnki() {
       const number = index + 1;
 
       try {
-        updateOperationProgress(`[${number}/${cards.length}] ${card.word} 처리 중…`);
+        const progress = 20 + Math.round(((number - 1) / cards.length) * 70);
+        updateOperationProgress(`[${number}/${cards.length}] ${card.word} 처리 중…`, progress);
         const noteId = await addOneCardToAnki(card, number, cards.length);
         successes.push({ index: number, word: card.word, noteId });
       } catch (error) {
@@ -1026,6 +1167,8 @@ async function addToAnki() {
         });
       }
     }
+
+    setOperationProgress(100, "처리 완료");
 
     const summary = `${t("bulkSummary")} · 성공 ${successes.length} / 실패 ${failures.length} / 전체 ${cards.length}`;
     const details = [
@@ -1119,7 +1262,7 @@ Output JSON only.
 Do not include explanations, markdown, or code fences.
 
 Required fields:
-cardMode, word, reading, furiganaWord, definition, nativeMeaning, expressions, examples, exampleReadings, synonyms, kanji.
+cardMode, word, reading, furiganaWord, definition, nativeMeaning, expressions, expressionReadings, examples, exampleReadings, synonyms, kanji.
 
 Rules:
 1. cardMode must be "jp-native".
@@ -1131,12 +1274,18 @@ Rules:
 5. definition must be a natural Japanese dictionary-style definition.
 6. nativeMeaning must be a natural meaning in the user's native language.
 7. expressions must contain 3 to 5 common collocations or fixed expressions.
-8. examples must contain 2 natural Japanese example sentences.
-9. exampleReadings must contain the full hiragana readings of examples, in the same order.
-10. synonyms must contain 2 to 4 synonyms or similar expressions.
-11. kanji must be an object. For each kanji in the target word, include its onyomi, kunyomi, and meaning.
-12. If there is no information for a field, use [] or {}, not null.
-13. The JSON must be valid. Do not add trailing commas.
+8. expressionReadings must contain the full hiragana readings of expressions, in the same order.
+9. examples must contain 2 natural Japanese example sentences.
+   - The first example must be written in a formal or written style.
+   - The second example must be written in a casual spoken style.
+   - Each example should be at least about 20 Japanese characters long.
+   - Avoid overly short or generic sentences.
+      - Use varied Japanese grammar patterns across the examples, such as relative clauses, conjunctions, conditionals, passive/causative forms, or contrastive expressions when natural.
+10. exampleReadings must contain the full hiragana readings of examples, in the same order.
+11. synonyms must contain 2 to 4 synonyms or similar expressions. Do not generate audio for synonyms.
+12. kanji must be an object. For each kanji in the target word, include its onyomi, kunyomi, and meaning.
+13. If there is no information for a field, use [] or {}, not null.
+14. The JSON must be valid. Do not add trailing commas.
 
 Ruby rules for expressions and examples:
 - In expressions and examples, add furigana to kanji by using HTML ruby tags.
@@ -1157,6 +1306,7 @@ Output format:
   "definition": "",
   "nativeMeaning": "",
   "expressions": [],
+  "expressionReadings": [],
   "examples": [],
   "exampleReadings": [],
   "synonyms": [],
