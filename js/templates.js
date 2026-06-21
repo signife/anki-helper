@@ -84,7 +84,6 @@ export function buildCardTemplates() {
       <div id="expressionsAudioStore" class="audio-store">{{ExpressionsAudio}}</div>
 
       <div class="meaning-divider"></div>
-      
 
       <section id="definitionSection" class="meaning-section">
         <div class="definition">{{Definition}}</div>
@@ -324,20 +323,42 @@ export function buildCardTemplates() {
 
   const setupListAudio = (sectionSelector, audioStoreSelector) => {
   const items = document.querySelectorAll(sectionSelector + " .content-list li");
-const buttons = document.querySelectorAll(audioStoreSelector + " .replay-button");
+  const buttons = document.querySelectorAll(audioStoreSelector + " .replay-button");
 
-    items.forEach((item, index) => {
-      item.classList.add("clickable-audio");
-      item.addEventListener("click", event => {
-        event.stopPropagation();
-        flashClickedItem(item);
-        buttons[index]?.click();
-      });
-    });
-  };
+  items.forEach((item, index) => {
+    item.classList.add("clickable-audio");
 
-  setupListAudio(".examples-section", "#examplesAudioStore");
-  setupListAudio(".expressions-section", "#expressionsAudioStore");
+    let lastPlayedAt = 0;
+
+    const blockAnkiTap = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.stopImmediatePropagation) {
+        event.stopImmediatePropagation();
+      }
+    };
+
+    const playItemAudio = event => {
+      blockAnkiTap(event);
+
+      const now = Date.now();
+      if (now - lastPlayedAt < 350) return;
+      lastPlayedAt = now;
+
+      flashClickedItem(item);
+      buttons[index]?.click();
+    };
+
+    item.addEventListener("click", playItemAudio, { capture: true });
+    item.addEventListener("pointerdown", blockAnkiTap, { capture: true });
+    item.addEventListener("pointerup", playItemAudio, { capture: true });
+    item.addEventListener("touchstart", blockAnkiTap, { capture: true, passive: false });
+    item.addEventListener("touchend", playItemAudio, { capture: true, passive: false });
+  });
+};
+
+setupListAudio(".examples-section", "#examplesAudioStore");
+setupListAudio(".expressions-section", "#expressionsAudioStore");
 })();
 <\/script>`;
 
@@ -776,19 +797,40 @@ body,
     font-size: clamp(1.95rem, 9.5vw, 2.45rem) !important;
   }
 
- .definition {
-  font-size: clamp(1rem, 4.4vw, 1.25rem);
-}
+  .definition {
+    font-size: clamp(1rem, 4.4vw, 1.25rem);
+  }
 
-.native-meaning {
-  font-size: clamp(1.05rem, 4.8vw, 1.35rem);
-}
+  .native-meaning {
+    font-size: clamp(1.05rem, 4.8vw, 1.35rem);
+  }
 
   .detail-tray {
-  width: min(700px, calc(100% - 24px));
-  margin: 0 auto 10px;
-  padding: 13px;
-}
+    width: min(390px, calc(100vw - 34px));
+    margin: 0 auto 10px;
+    padding: 12px 10px;
+  }
+
+  .content-list {
+    font-size: 1.02rem;
+    line-height: 1.78;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .content-list li {
+    width: 100%;
+    max-width: 22em;
+    margin: .72em auto;
+    padding: .42em .52em;
+    text-align: left;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(255,255,255,.25);
+  }
+
+  .content-list ruby {
+    ruby-align: start;
+  }
 }
 `;
 }
