@@ -322,40 +322,74 @@ export function buildCardTemplates() {
   };
 
   const setupListAudio = (sectionSelector, audioStoreSelector) => {
-  const items = document.querySelectorAll(sectionSelector + " .content-list li");
-  const buttons = document.querySelectorAll(audioStoreSelector + " .replay-button");
+    const items = document.querySelectorAll(sectionSelector + " .content-list li");
+    const buttons = document.querySelectorAll(audioStoreSelector + " .replay-button");
 
-  items.forEach((item, index) => {
-    item.classList.add("clickable-audio");
+    items.forEach((item, index) => {
+      item.classList.add("clickable-audio");
 
-    let lastPlayedAt = 0;
+      let lastPlayedAt = 0;
+      let pointerStartX = 0;
+      let pointerStartY = 0;
+      let pointerMoved = false;
+      let suppressNextClick = false;
 
-    const blockAnkiTap = event => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (event.stopImmediatePropagation) {
-        event.stopImmediatePropagation();
-      }
-    };
+      const stopAnkiCardTap = event => {
+        event.stopPropagation();
+        if (event.stopImmediatePropagation) {
+          event.stopImmediatePropagation();
+        }
+      };
 
-    const playItemAudio = event => {
-      blockAnkiTap(event);
+      const playItemAudio = event => {
+        stopAnkiCardTap(event);
+        event.preventDefault();
 
-      const now = Date.now();
-      if (now - lastPlayedAt < 350) return;
-      lastPlayedAt = now;
+        const now = Date.now();
+        if (now - lastPlayedAt < 350) return;
+        lastPlayedAt = now;
 
-      flashClickedItem(item);
-      buttons[index]?.click();
-    };
+        flashClickedItem(item);
+        buttons[index]?.click();
+      };
 
-    item.addEventListener("click", playItemAudio, { capture: true });
-    item.addEventListener("pointerdown", blockAnkiTap, { capture: true });
-    item.addEventListener("pointerup", playItemAudio, { capture: true });
-    item.addEventListener("touchstart", blockAnkiTap, { capture: true, passive: false });
-    item.addEventListener("touchend", playItemAudio, { capture: true, passive: false });
-  });
-};
+      item.addEventListener("pointerdown", event => {
+        stopAnkiCardTap(event);
+        pointerStartX = event.clientX;
+        pointerStartY = event.clientY;
+        pointerMoved = false;
+      }, { capture: true });
+
+      item.addEventListener("pointermove", event => {
+        const dx = Math.abs(event.clientX - pointerStartX);
+        const dy = Math.abs(event.clientY - pointerStartY);
+        if (dx > 8 || dy > 8) pointerMoved = true;
+      }, { capture: true });
+
+      item.addEventListener("pointerup", event => {
+        stopAnkiCardTap(event);
+
+        if (event.pointerType === "touch" || event.pointerType === "pen") {
+          suppressNextClick = true;
+          if (pointerMoved) return;
+          playItemAudio(event);
+        }
+      }, { capture: true });
+
+      item.addEventListener("click", event => {
+        stopAnkiCardTap(event);
+
+        if (suppressNextClick) {
+          suppressNextClick = false;
+          event.preventDefault();
+          return;
+        }
+
+        if (pointerMoved) return;
+        playItemAudio(event);
+      }, { capture: true });
+    });
+  };
 
 setupListAudio(".examples-section", "#examplesAudioStore");
 setupListAudio(".expressions-section", "#expressionsAudioStore");
@@ -784,8 +818,8 @@ body,
 
 @media (max-width: 480px) {
   .jlpt-card {
-    --top-word-size: clamp(36px, 10.5vw, 48px);
-    --top-word-ruby-size: .34em;
+    --top-word-size: clamp(34px, 9.6vw, 44px);
+    --top-word-ruby-size: .26em;
   }
 
   .front-center,
@@ -809,6 +843,8 @@ body,
     width: min(390px, calc(100vw - 34px));
     margin: 0 auto 10px;
     padding: 12px 10px;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
   }
 
   .content-list {
@@ -824,12 +860,17 @@ body,
     margin: .72em auto;
     padding: .42em .52em;
     text-align: left;
-    touch-action: manipulation;
+    touch-action: pan-y;
     -webkit-tap-highlight-color: rgba(255,255,255,.25);
   }
 
   .content-list ruby {
     ruby-align: start;
+  }
+
+  .content-list ruby rt {
+    font-size: .48em;
+    line-height: .95;
   }
 }
 `;
