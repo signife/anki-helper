@@ -322,74 +322,166 @@ export function buildCardTemplates() {
   };
 
   const setupListAudio = (sectionSelector, audioStoreSelector) => {
-    const items = document.querySelectorAll(sectionSelector + " .content-list li");
-    const buttons = document.querySelectorAll(audioStoreSelector + " .replay-button");
+  const items = document.querySelectorAll(sectionSelector + " .content-list li");
+  const buttons = document.querySelectorAll(audioStoreSelector + " .replay-button");
 
-    items.forEach((item, index) => {
-      item.classList.add("clickable-audio");
+  const MAX_TAP_MS = 200;
+  const LONG_PRESS_MS = 250;
+  const MOVE_LIMIT = 8;
+  const SYNTHETIC_CLICK_BLOCK_MS = 900;
 
-      let lastPlayedAt = 0;
-      let pointerStartX = 0;
-      let pointerStartY = 0;
-      let pointerMoved = false;
-      let suppressNextClick = false;
+  items.forEach((item, index) => {
+    item.classList.add("clickable-audio");
 
-      const stopAnkiCardTap = event => {
-        event.stopPropagation();
-        if (event.stopImmediatePropagation) {
-          event.stopImmediatePropagation();
-        }
-      };
+    let startX = 0;
+    let startY = 0;
+    let startAt = 0;
 
-      const playItemAudio = event => {
-        stopAnkiCardTap(event);
-        event.preventDefault();
+    let moved = false;
+    let longPressed = false;
+    let trackingTouch = false;
 
-        const now = Date.now();
-        if (now - lastPlayedAt < 350) return;
-        lastPlayedAt = now;
+    let longPressTimer = null;
+    let blockClickUntil = 0;
+    let lastPlayedAt = 0;
 
-        flashClickedItem(item);
-        buttons[index]?.click();
-      };
+    const hasTextSelection = () => {
+      const selection = window.getSelection?.();
+      return !!selection && selection.toString().trim().length > 0;
+    };
 
-      item.addEventListener("pointerdown", event => {
-        stopAnkiCardTap(event);
-        pointerStartX = event.clientX;
-        pointerStartY = event.clientY;
-        pointerMoved = false;
-      }, { capture: true });
+    const stopAnkiCardTap = event => {
+      event.stopPropagation();
+      if (event.stopImmediatePropagation) {
+        event.stopImmediatePropagation();
+      }
+    };
 
-      item.addEventListener("pointermove", event => {
-        const dx = Math.abs(event.clientX - pointerStartX);
-        const dy = Math.abs(event.clientY - pointerStartY);
-        if (dx > 8 || dy > 8) pointerMoved = true;
-      }, { capture: true });
+    const blockSyntheticClick = () => {
+      blockClickUntil = Date.now() + SYNTHETIC_CLICK_BLOCK_MS;
+    };
 
-      item.addEventListener("pointerup", event => {
-        stopAnkiCardTap(event);
+    const playItemAudio = event => {
+      const now = Date.now();
+      if (now - lastPlayedAt < 350) return;
+      lastPlayedAt = now;
 
-        if (event.pointerType === "touch" || event.pointerType === "pen") {
-          suppressNextClick = true;
-          if (pointerMoved) return;
-          playItemAudio(event);
-        }
-      }, { capture: true });
+      stopAnkiCardTap(event);
+      event.preventDefault();
 
-      item.addEventListener("click", event => {
-        stopAnkiCardTap(event);
+      flashClickedItem(item);
+      buttons[index]?.click();
+    };
 
-        if (suppressNextClick) {
-          suppressNextClick = false;
+    const markMovedIfNeeded = point => {
+      if (!point) return;
+
+      const dx = Math.abs(point.clientX - startX);
+      const dy = Math.abs(point.clientY - startY);
+
+      if (dx > MOVE_LIMIT || dy > MOVE_LIMIT) {
+        moved = true;
+        clearTimeout(longPressTimer);
+        blockSyntheticClick();
+      }
+    };
+
+    item.addEventListener("touchstart", event => {
+      if (event.touches.length !== 1) return;
+
+      const touch = event.touches[0];
+
+      startX = touch.clientX;
+      startY = touch.clientY;
+      startAt = Date.now();
+
+      moved = false;
+      longPressed = false;
+      trackingTouch = true;
+
+      clearTimeout(longPressTimer);
+
+      longPressTimer = setTimeout(() => {
+        longPressed = true;
+        blockSyntheticClick();
+      }, LONG_PRESS_MS);
+
+   
+      stopAnkiCardTap(event);
+    }, { passive: true, capture: true });
+
+    item.addEventListener("touchmove", event => {
+      if (!trackingTouch) return;
+
+      markMovedIfNeeded(event.touches[0]);
+      stopAnkiCardTap(event);
+    }, { passive: true, capture: true });
+
+    item.addEventListener("touchend", event => {
+      if (!trackingTouch) return;
+
+      clearTimeout(longPressTimer);
+      trackingTouch = false;
+
+      markMovedIfNeeded(event.changedTouches[0]);
+
+      const duration = Date.now() - startAt;
+
+ 
+      blockSyntheticClick();
+
+ 
+      stopAnkiCardTap(event);
+
+
+      if (hasTextSelection()) return;
+
+  
+      if (moved) return;
+
+
+      if (longPressed) return;
+
+
+      if (duration > MAX_TAP_MS) return;
+
+
+      playItemAudio(event);
+    }, { passive: false, capture: true });
+
+    item.addEventListener("touchcancel", event => {
+      clearTimeout(longPressTimer);
+
+      trackingTouch = false;
+      moved = true;
+      longPressed = true;
+
+      blockSyntheticClick();
+      stopAnkiCardTap(event);
+    }, { passive: true, capture: true });
+
+    item.addEventListener("click", event => {
+      stopAnkiCardTap(event);
+
+      const now = Date.now();
+
+      
+      if (now < blockClickUntil) {
+        if (!hasTextSelection()) {
           event.preventDefault();
-          return;
         }
+        return;
+      }
 
-        if (pointerMoved) return;
-        playItemAudio(event);
-      }, { capture: true });
-    });
-  };
+
+      if (hasTextSelection()) {
+        return;
+      }
+
+      playItemAudio(event);
+    }, { capture: true });
+  });
+};
 
 setupListAudio(".examples-section", "#examplesAudioStore");
 setupListAudio(".expressions-section", "#expressionsAudioStore");
@@ -761,6 +853,14 @@ body,
   padding: .03em .38em;
   text-align: center;
 }
+.detail-tray,
+.content-list,
+.content-list li,
+.content-list li * {
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+}
 
 .content-list ruby {
   ruby-align: center;
@@ -855,14 +955,17 @@ body,
   }
 
   .content-list li {
-    width: 100%;
-    max-width: 22em;
-    margin: .72em auto;
-    padding: .42em .52em;
-    text-align: left;
-    touch-action: pan-y;
-    -webkit-tap-highlight-color: rgba(255,255,255,.25);
-  }
+  width: 100%;
+  max-width: 22em;
+  margin: .72em auto;
+  padding: .42em .52em;
+  text-align: left;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: rgba(255,255,255,.25);
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+}
 
   .content-list ruby {
     ruby-align: start;
